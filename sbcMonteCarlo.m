@@ -134,7 +134,7 @@ a(27).mean = 0.5;
 a(27).std = 0.1;
 
 a(28).name = 'operatingCostFactor'; % Fraction of costs in addition to DOC and landing fees
-a(28).mean = 0.5;
+a(28).mean = 1.5;
 a(28).std = 0.1;
 
 % Cost Specifications
@@ -306,23 +306,23 @@ grid on
 
 
 %% Show input/output scatter plots
-% for i = 1:nInputs/2
-%     
-%     if rem(i-1,6) == 0
-%         figuren(['Scatterplot ',num2str((i-1)/6+1)]); clf;
-%     end
-%     
-%     for j = 1:nOutputs
-%         subplotIdx = rem(i-1,6)*nOutputs+j;
-%         subplot(6,8,subplotIdx); hold on;
-%         plot(cat(1,inputs{:,2*i}),out(:,j),'.')
-%         grid on
-%         
-%         if rem(subplotIdx,nOutputs) == 1
-%             ylabel(inputs{1,2*i-1})
-%         end
-%         if subplotIdx / 8 > 5
-%             xlabel(outName{j})
-%         end
-%     end
-% end
+for i = 1:nInputs/2
+    
+    if rem(i-1,6) == 0
+        figuren(['Scatterplot ',num2str((i-1)/6+1)]); clf;
+    end
+    
+    for j = 1:nOutputs
+        subplotIdx = rem(i-1,6)*nOutputs+j;
+        subplot(6,8,subplotIdx); hold on;
+        plot(cat(1,inputs{:,2*i}),out(:,j),'.')
+        grid on
+        
+        if rem(subplotIdx,nOutputs) == 1
+            ylabel(inputs{1,2*i-1})
+        end
+        if subplotIdx / 8 > 5
+            xlabel(outName{j})
+        end
+    end
+end
