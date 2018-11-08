@@ -12,7 +12,7 @@ addParameter(ip, 'pilot',           0,          @isnumeric);                %Num
 addParameter(ip, 'timeValue',       3/60,       @isnumeric);                %Premium market value of time [$/s]
 addParameter(ip, 'distanceValue',   3.5/1000,   @isnumeric);                %Ticket price charged per distance [$/m]
 addParameter(ip, 'flightTimeValue', 0.25,       @isnumeric);                %Ticket price per time [$/s]
-addParameter(ip, 'ticketModel',     'all',      @ischar);                   %Ticket price model.
+addParameter(ip, 'ticketModel',     'value',    @ischar);                   %Ticket price model.
                                                                             %   value: based on time value
                                                                             %   distance: based on trip distance
                                                                             %   time: based on flight time
@@ -205,7 +205,6 @@ switch p.ticketModel
         flyPrice=min(cat(3,p.timeValue*(tDrive-tFly)+drivePrice, ...
             p.distanceValue*range, p.flightTimeValue*tTrip),[],3);
 end
-flyPrice(tDrive<tFly)=nan;                                                  %If the flight is longer than the drive then ignore
 
 %Business Case
 passengerLoadingRate=1+.1*(1-p.nPax);                                       %Average rate that vehicle is full when flying passengers

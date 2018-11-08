@@ -22,8 +22,8 @@ nDesignValues = 4; %Number of above design values
 %% Assumption distributions
 a = struct();
 a(1).name = 'timeValue'; % Premium market value of time [$/s]
-a(1).mean = 3;
-a(1).std = 0.5;
+a(1).mean = 2/60;
+a(1).std = 2/60;
 
 a(2).name = 'distanceValue';  % Ticket price charged per distance [$/m]
 a(2).mean = 3.5/1000;

@@ -15,7 +15,7 @@ cellType='a';
 switch lower(cellType)
     case 'a' %Advanced cells
         specificBatteryCost=660/3600/1000;
-        %specificBatteryCost=200/3600/1000;
+        specificBatteryCost=200/3600/1000;
         cellSpecificEnergy=325*3600;
         depthDegradationRate=3.662;
     case 'b' %Basic cells
@@ -23,7 +23,7 @@ switch lower(cellType)
         cellSpecificEnergy=240*3600;
         depthDegradationRate=3.18;
 end
-inputs={'specificBatteryCost',specificBatteryCost,'cellSpecificEnergy',cellSpecificEnergy,'depthDegradationRate',depthDegradationRate,'landingFee',40};
+inputs={'specificBatteryCost',specificBatteryCost,'cellSpecificEnergy',cellSpecificEnergy,'depthDegradationRate',depthDegradationRate};
 
 
 for i=1:length(nPax)
@@ -68,13 +68,13 @@ if numel(R)>4
     end
 end
 
-%%
+% %%
 % nPax=2:5;
 % dMission=linspace(20,70,20)*1000;
 % massGrossRange=linspace(1000,5000,10);  %Gross takeoff mass evaluation range [kg]
 % vCruiseRange=linspace(10,110,20);       %Cruise speed evaluation range [m/s]
 % [M,V]=meshgrid(massGrossRange,vCruiseRange);
-%
+% 
 % lb=[0 0]; ub=[5000 200];
 % options=optimoptions('fmincon','ScaleProblem','obj-and-constr','display','none');
 % for i=1:length(nPax)
@@ -82,11 +82,11 @@ end
 %     for j=1:length(dMission)
 %         %Initial guess
 %         P=simpleBusinessCase(M,V,nPax(i),'dMission',dMission(j),inputs{:});
-%
+% 
 %         if ~all(all(isnan(P)))
 %             x0(1)=M(P(:)==max(P(:)));
 %             x0(2)=V(P(:)==max(P(:)));
-%
+% 
 %             %For a given mission distance and vehicle mass, find the cruise speed
 %             %that maximizes profit.
 %             [x,p(j)]=fminsearch(@(x) -simpleBusinessCase(x(1),x(2),nPax(i),'dMission',dMission(j),inputs{:}),x0);
@@ -105,7 +105,7 @@ end
 %     subplot(1,3,2); hold on; plot(dMission/1e3,p/1e6,'linewidth',2); ylabel('Annual profit per vehicle [$]')
 %     subplot(1,3,3); hold on; plot(dMission/1e3,v*3.6,'linewidth',2); ylabel('Cruise Speed [km/h]')
 % end
-%
+% 
 % for i=1:3
 %     figure(2)
 %     subplot(1,3,i)
