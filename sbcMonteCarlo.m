@@ -10,20 +10,18 @@ clc
 rng default % Reset random number generator to make repeatable
 
 %% Monte Carlo Values
-n = 200;
+n = 300;
 
 %% Design values
 dValue = 14;
 pilot = 0; % Number of pilots (non-paying passengers)
-nPax = 2;
-dMission = 40e3;
-nDesignValues = 4; %Number of above design values 
+nPax = 3;
 
 %% Assumption distributions
 a = struct();
 a(1).name = 'timeValue'; % Premium market value of time [$/s]
-a(1).mean = 2/60;
-a(1).std = 2/60;
+a(1).mean = 2.5/60;
+a(1).std = 1/60;
 
 a(2).name = 'distanceValue';  % Ticket price charged per distance [$/m]
 a(2).mean = 3.5/1000;
@@ -36,7 +34,7 @@ a(3).std = 0.05;
 % Vehicle
 a(4).name = 'emptyFraction'; % Empty mass fraction
 a(4).mean = 0.6;
-a(4).std = 0.02;
+a(4).std = 0.03;
 
 a(5).name = 'hoverEfficiency'; % Hover electical efficiency (motor+controller+line)
 a(5).mean = 0.93*0.98*0.98;
@@ -46,7 +44,7 @@ a(6).name = 'hoverKappa'; % Account for induced tip losses
 a(6).mean = 1.1;
 a(6).std = 0.02;
 
-a(7).name = 'areaRotorFraction'; % Rotor diameter normalized by d-value (ASSUMES 8 rotors for now)
+a(7).name = 'areaRotorFraction'; % d-value area occupied by disk area
 a(7).mean = 0.32;
 a(7).std = 0.02;
 
@@ -207,8 +205,12 @@ a(45).name = 'alightTime'; % Time to alight and get to curb [s]
 a(45).mean = 4 * 60;
 a(45).std = 1 * 60;
 
+a(45).name = 'dMission'; % Mission length [m]
+a(45).mean = 50e3;
+a(45).std = 10e3;
+
 % Storage for inputs and outputs
-inputs = cell(n,6 + 2 * length(a));
+inputs = cell(n,4 + 2 * length(a));
 profitPerYear = zeros(n,1);
 costPerFlightHour = zeros(n,1);
 impliedValue = zeros(n,1);
@@ -219,10 +221,10 @@ dischargeRate = zeros(n,1);
 dischargeDepth = zeros(n,1);
 outName={'profitPerYear';'costPerFlightHour';'impliedValue';'range';'massGross';'vCruise';'dischargeRate';'dischargeDepth'};
 for i = 1:n
-    inputs(i,1:6) = {'dValue',dValue,'pilot',pilot,'dMission',dMission};
+    inputs(i,1:4) = {'dValue',dValue,'pilot',pilot};
     for j = 1:length(a)
-        inputs{i,2*j+5} = a(j).name;
-        inputs{i,2*j+6} = a(j).mean + randn * a(j).std;
+        inputs{i,2*j+3} = a(j).name;
+        inputs{i,2*j+4} = a(j).mean + randn * a(j).std;
     end
     [profitPerYear(i),costPerFlightHour(i),impliedValue(i),range(i), mass(i), vCruise(i), dischargeRate(i), ...
         dischargeDepth(i)] = sbcOpt(nPax,inputs{i,:});
@@ -306,23 +308,23 @@ grid on
 
 
 %% Show input/output scatter plots
-for i = 1:nInputs/2
-    
-    if rem(i-1,6) == 0
-        figuren(['Scatterplot ',num2str((i-1)/6+1)]); clf;
-    end
-    
-    for j = 1:nOutputs
-        subplotIdx = rem(i-1,6)*nOutputs+j;
-        subplot(6,8,subplotIdx); hold on;
-        plot(cat(1,inputs{:,2*i}),out(:,j),'.')
-        grid on
-        
-        if rem(subplotIdx,nOutputs) == 1
-            ylabel(inputs{1,2*i-1})
-        end
-        if subplotIdx / 8 > 5
-            xlabel(outName{j})
-        end
-    end
-end
+% for i = 1:nInputs/2
+%     
+%     if rem(i-1,6) == 0
+%         figuren(['Scatterplot ',num2str((i-1)/6+1)]); clf;
+%     end
+%     
+%     for j = 1:nOutputs
+%         subplotIdx = rem(i-1,6)*nOutputs+j;
+%         subplot(6,8,subplotIdx); hold on;
+%         plot(cat(1,inputs{:,2*i}),out(:,j),'.')
+%         grid on
+%         
+%         if rem(subplotIdx,nOutputs) == 1
+%             ylabel(inputs{1,2*i-1})
+%         end
+%         if subplotIdx / 8 > 5
+%             xlabel(outName{j})
+%         end
+%     end
+% end

@@ -212,7 +212,8 @@ revenuePerTrip=flyPrice.*nPax.*passengerLoadingRate;                        %Rev
 revenuePerFlightHour=revenuePerTrip./(tTrip/3600).*(1-p.deadheadRate);      %Revenue per flight hour [$/FH]
 profitPerFlightHour=revenuePerFlightHour-costPerFlightHour;                 %Profit per flight hour [$/FH]
 profitPerYear=profitPerFlightHour.*flightHoursPerYear;                      %Annual profit [$/yr]      
-impliedValue=(flyPrice+p.taxiPriceRate.*p.lastLegDistance-drivePrice)./(tDrive-tFly)*60;                       %Otherwise, computer implied value [$ per min saved]
+impliedValue=(flyPrice+p.taxiPriceRate.*p.lastLegDistance...
+    -drivePrice)./(tDrive-tFly)*60;                                         %Implied value [$ paid by passener per min saved]
 impliedValue(flyPrice>drivePrice & tDrive<tFly)=nan;                        %If aircraft is slower and more expensive then no value
 
 %Data out
