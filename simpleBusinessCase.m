@@ -86,7 +86,7 @@ addParameter(ip, 'lastLegDistance',         3000,       @isnumeric);        %Dis
 addParameter(ip, 'curbTime',                16*60,      @isnumeric);        %Time to transfer from gate to curb [s]
 addParameter(ip, 'unloadTime',              1*60,       @isnumeric);        %Time to unload from taxi [s]
 addParameter(ip, 'transferTime',            24*60,      @isnumeric);        %Time to transfer from gate to helipad including security [s]
-addParameter(ip, 'alightTime',              4*60,       @isnumeric);        %Time to alight and get to curb [s]
+addParameter(ip, 'alightTime',              6*60,       @isnumeric);        %Time to alight and get to curb [s]
 
 %Output data request
 addParameter(ip, 'out',        {'profitPerYear'},       @iscell);           %Time to alight and get to curb [s]
@@ -186,15 +186,17 @@ costPerFlightHour=variableCost+(annualCost+p.landingFee.*tripsPerYear)./flightHo
 costPerFlightHour=costPerFlightHour.*p.operatingCostFactor;
 
 %Passenger experience
-vDrive=(25+0.4331*range/1000)*1000/3600;                                    %Taxi speed during peak traffic [m/s]
-tDrive=p.curbTime+range./vDrive+p.unloadTime;                               %Taxi trip time [s]
-drivePrice=p.taxiPriceRate.*range;                                          %Taxi ticket price [$]
-tFly=p.transferTime+tTrip+p.alightTime+p.lastLegDistance./vDrive;           %UAM trip time [s]
+vDrive=16.6*range./(15000+range);                                               %Taxi speed during peak traffic [m/s]
+tDrive=p.curbTime+range./vDrive+p.unloadTime;                                   %Taxi trip time [s]
+drivePrice=p.taxiPriceRate.*range;                                              %Taxi ticket price [$]
+vLast=16.6*p.lastLegDistance./(15000+p.lastLegDistance);                        %Average speed for the last leg [m/s]
+tFly=p.transferTime+tTrip+p.alightTime+p.lastLegDistance./vLast+p.unloadTime;   %UAM trip time [s]
 
 %Model to select UAM trip price
 switch p.ticketModel
     case 'value'                                                            %Ticket price based on time value [$]
-        flyPrice=p.timeValue*(tDrive-tFly)+drivePrice;
+        flyPrice=p.timeValue*(tDrive-tFly)+...
+            drivePrice-p.lastLegDistance.*p.taxiPriceRate;
     case 'distance'                                                         %Ticket price based on trip distance [$]
         flyPrice=p.distanceValue*range;
     case 'time'                                                             %Ticket price based on trip time [$]
@@ -203,17 +205,15 @@ switch p.ticketModel
         flyPrice=min(cat(3,p.timeValue*(tDrive-tFly)+drivePrice, ...
             p.distanceValue*range, p.flightTimeValue*tTrip),[],3);
 end
-temp=flyPrice<0;
-flyPrice=flyPrice+p.taxiPriceRate.*p.lastLegDistance;                       %Include last leg taxi fare [$]
-flyPrice(temp)=nan;                                                         
+flyPrice(tDrive<tFly)=nan;                                                  %If the flight is longer than the drive then ignore
 
 %Business Case
 passengerLoadingRate=1+.1*(1-p.nPax);                                       %Average rate that vehicle is full when flying passengers
 revenuePerTrip=flyPrice.*nPax.*passengerLoadingRate;                        %Revenue per trip [$/mission]
 revenuePerFlightHour=revenuePerTrip./(tTrip/3600).*(1-p.deadheadRate);      %Revenue per flight hour [$/FH]
 profitPerFlightHour=revenuePerFlightHour-costPerFlightHour;                 %Profit per flight hour [$/FH]
-profitPerYear=profitPerFlightHour.*flightHoursPerYear;                      %Annual profit [$/yr]
-impliedValue=(flyPrice-drivePrice)./(tDrive-tFly)*60;                       %Otherwise, computer implied value [$ per min saved]
+profitPerYear=profitPerFlightHour.*flightHoursPerYear;                      %Annual profit [$/yr]      
+impliedValue=(flyPrice+p.taxiPriceRate.*p.lastLegDistance-drivePrice)./(tDrive-tFly)*60;                       %Otherwise, computer implied value [$ per min saved]
 impliedValue(flyPrice>drivePrice & tDrive<tFly)=nan;                        %If aircraft is slower and more expensive then no value
 
 %Data out

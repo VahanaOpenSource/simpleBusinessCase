@@ -15,7 +15,7 @@ cellType='a';
 switch lower(cellType)
     case 'a' %Advanced cells
         specificBatteryCost=660/3600/1000;
-        specificBatteryCost=200/3600/1000;
+        %specificBatteryCost=200/3600/1000;
         cellSpecificEnergy=325*3600;
         depthDegradationRate=3.662;
     case 'b' %Basic cells
@@ -23,11 +23,11 @@ switch lower(cellType)
         cellSpecificEnergy=240*3600;
         depthDegradationRate=3.18;
 end
-inputs={'specificBatteryCost',specificBatteryCost,'cellSpecificEnergy',cellSpecificEnergy,'depthDegradationRate',depthDegradationRate};
+inputs={'specificBatteryCost',specificBatteryCost,'cellSpecificEnergy',cellSpecificEnergy,'depthDegradationRate',depthDegradationRate,'landingFee',40};
 
 
 for i=1:length(nPax)
-    [P,R]=simpleBusinessCase(M(:),V(:),nPax(i),inputs{:},'out',{'profitPerYear';'range'});%,'dMission',dMission,'cellSpecificEnergy',340*3600,'cycleLifeFactor',1000,'specificBatteryCost',400/3600/1000);
+    [P,R,T]=simpleBusinessCase(M(:),V(:),nPax(i),inputs{:},'out',{'profitPerYear';'range';'tripsPerYear'});
     
     P=reshape(P,nRange,nRange)/1e6;
     R=reshape(R,nRange,nRange)/1e3;
