@@ -110,14 +110,15 @@ massEmpty=p.massGross.*p.emptyFraction;                                     %Emp
 massBatteries=max(0,p.massGross-massEmpty-payload);                         %Battery mass [kg]
 
 %Hover performance
-tipSpeed=p.vSound.*p.tipMach;                                                                       %Rotor tip speed [m/s]
-diskArea=(0.25*pi*p.dValue.^2).*p.areaRotorFraction./p.nMotors;                                     %Disk area per rotor [m^2]                                                                     
-solidity=6*(p.massGross.*p.g./p.nMotors)./(p.rho.*tipSpeed.^2.*diskArea.*p.bladeCl);                %Solidity
-solidity=median(cat(3,solidity,unit.*p.solidityMin,unit.*p.solidityMax),3);                         %Apply solidity bounds
-tipSpeed=sqrt(6*(p.massGross.*p.g./p.nMotors)./(p.rho.*diskArea.*p.bladeCl.*solidity));             %Recompute tip speed based on new solidity
-powerInduced=(p.massGross.*p.g./p.nMotors).^1.5./sqrt(2*p.rho.*diskArea).*p.hoverKappa;  %Induced power [W]
-powerProfile=p.rho.*diskArea.*tipSpeed.^3.*solidity.*p.bladeCd/8;                                   %Profile power [W]
-powerHover=p.nMotors.*(powerInduced+powerProfile)./p.hoverEfficiency;                                          %Total hover power draw [W]
+tipSpeed=p.vSound.*p.tipMach;                                                           %Rotor tip speed [m/s]
+diskArea=(0.25*pi*p.dValue.^2).*p.areaRotorFraction./p.nMotors;                         %Disk area per rotor [m^2]                                                                     
+solidity=6*(p.massGross.*p.g./p.nMotors)./(p.rho.*tipSpeed.^2.*diskArea.*p.bladeCl);    %Solidity
+solidity=median(cat(3,solidity,unit.*p.solidityMin,unit.*p.solidityMax),3);             %Apply solidity bounds
+tipSpeed=sqrt(6*(p.massGross.*p.g./p.nMotors)./(p.rho.*diskArea.*p.bladeCl.*solidity)); %Recompute tip speed based on new solidity
+powerInduced=(p.massGross.*p.g./p.nMotors).^1.5./sqrt(2*p.rho.*diskArea).*p.hoverKappa; %Induced power [W]
+powerProfile=p.rho.*diskArea.*tipSpeed.^3.*solidity.*p.bladeCd/8;                       %Profile power [W]
+powerHover=p.nMotors.*(powerInduced+powerProfile)./p.hoverEfficiency;                   %Total hover power draw [W]
+powerHover(tipSpeed>p.vSound.*p.tipMach)=nan;                                           %Respect tip speed limit     
 
 %Cruise performance
 sRef=p.massGross.*p.g./(0.5*p.rho.*p.cruiseCl.*p.vCruise.^2);               %Reference wing area [m^2]
@@ -125,7 +126,7 @@ AR=p.dValue.^2./sRef;                                                       %Asp
 AR=sum(cat(3,AR,p.ARmax.*unit).^-6,3).^(-1/6);                              %Apply aspect ratio upper limit
 sRef=p.dValue.^2./AR;                                                       %Recompute reference wing area [m^2]
 Cl=p.massGross.*p.g./(0.5*p.rho.*sRef.*p.vCruise.^2);                       %Recompute cruise lift coefficient
-oswald=sqrt(1-(p.vCruise./p.vSound).^2)*0.85./(1+0.008*AR);                 %Oswald efficiency factor
+oswald=sqrt(1-(p.vCruise./p.vSound).^2)*0.85./(1+0.0096*AR);                 %Oswald efficiency factor
 cruiseCd=p.Cd0+Cl.^2./(pi*AR.*oswald);                                      %Cruise drag coefficient
 lod=Cl./cruiseCd;                                                           %Lift-to-drag ratio
 powerCruise=p.massGross.*p.g.*p.vCruise./lod./p.cruiseEfficiency;           %Total cruise power draw [W]

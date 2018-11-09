@@ -10,7 +10,7 @@ clc
 rng default % Reset random number generator to make repeatable
 
 %% Monte Carlo Values
-n = 300;
+n = 200;
 
 %% Design values
 dValue = 14;
@@ -58,7 +58,7 @@ a(9).std = 0.002;
 
 a(10).name = 'tipMach'; % Hover tip speed limit at sea level
 a(10).mean = 0.45;
-a(10).std = 0.03;
+a(10).std = 0.02;
 
 a(11).name = 'cruiseEfficiency'; % Cruise electrical + prop efficiency (motor+controller+line+prop)
 a(11).mean = 0.9*0.96*0.98*0.81;
