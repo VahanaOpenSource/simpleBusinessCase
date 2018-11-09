@@ -10,12 +10,12 @@ pilot=0;
 nPax=2:5;
 unit=ones(numel(M),1);
 %Battery data
-cellType='a';
+cellType='b';
 
 switch lower(cellType)
     case 'a' %Advanced cells
         specificBatteryCost=660/3600/1000;
-        specificBatteryCost=100/3600/1000;
+        %specificBatteryCost=100/3600/1000;
         cellSpecificEnergy=325*3600;
         depthDegradationRate=3.662;
     case 'b' %Basic cells

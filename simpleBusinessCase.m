@@ -137,6 +137,9 @@ energyTotal=specificEnergy.*massBatteries;                                      
 energyAlternate=min(cat(3,powerCruise.*p.tAlternate,powerCruise.*p.dAlternate./p.vCruise),[],3);    %Energy used during alternate (2 types of alternate considered) [Ws]
 energyReserve=energyTotal.*p.reserveEnergyFactor;                                                   %Reserve energy
 
+%If the mission length is not defined, then the maximum primary mission 
+%range is used as the reference distance. Otherwise, the user input length
+%is used.
 if all(isnan(p.dMission))
     energyCruise=energyTotal-powerHover.*p.tHover-energyAlternate-energyReserve;    %Remaining energy for mission [Ws]
     energyCruise(energyCruise<0)=nan;                                               %Remove infeasible cases
@@ -205,6 +208,8 @@ switch p.ticketModel
     case 'all'                                                              %Ticket price based on all models [$]
         flyPrice=min(cat(3,p.timeValue*(tDrive-tFly)+drivePrice, ...
             p.distanceValue*range, p.flightTimeValue*tTrip),[],3);
+    otherwise
+        error('Ticket model name not recognized');
 end
 
 %Business Case
