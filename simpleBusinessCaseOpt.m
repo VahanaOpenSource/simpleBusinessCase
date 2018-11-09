@@ -10,12 +10,11 @@ pilot=0;
 nPax=2:5;
 unit=ones(numel(M),1);
 %Battery data
-cellType='b';
+cellType='a';
 
 switch lower(cellType)
     case 'a' %Advanced cells
         specificBatteryCost=660/3600/1000;
-        %specificBatteryCost=100/3600/1000;
         cellSpecificEnergy=325*3600;
         depthDegradationRate=3.662;
     case 'b' %Basic cells
@@ -27,10 +26,12 @@ inputs={'specificBatteryCost',specificBatteryCost,'cellSpecificEnergy',cellSpeci
 
 
 for i=1:length(nPax)
-    [P,R,T]=simpleBusinessCase(M(:),V(:),nPax(i),inputs{:},'out',{'profitPerYear';'range';'tripsPerYear'});
+    [P,R,T,L]=simpleBusinessCase(M(:),V(:),nPax(i),inputs{:},'out',{'profitPerYear';'range';'tripsPerYear';'lod'});
     
     P=reshape(P,nRange,nRange)/1e6;
     R=reshape(R,nRange,nRange)/1e3;
+    T=reshape(T,nRange,nRange);
+    L=reshape(L,nRange,nRange);
     
     %Plot results
     if numel(R)>4
@@ -39,7 +40,7 @@ for i=1:length(nPax)
         if i==1; clf; end
         subplot(1,length(nPax),i); hold on;
         
-        contour(V*3.6,R,M,'linewidth',2,'ShowText','on','linecolor',[1 0.9 0.9])
+        contour(V*3.6,R,L,'linewidth',2,'ShowText','on','linecolor',[1 0.9 0.9])
         contour(V*3.6,R,P,'linewidth',2,'ShowText','on')
         xlabel('Cruise speed [km/h]')
         ylabel('Range [km]')
