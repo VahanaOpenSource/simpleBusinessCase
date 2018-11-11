@@ -39,7 +39,7 @@ addParameter(ip, 'solidityMax',         0.25,                 @isnumeric);  %Max
 addParameter(ip, 'cruiseEfficiency',    0.90*0.96*0.98*0.81,  @isnumeric);  %Cruise propeller efficiency (motor+controller+line+efficiency)
 addParameter(ip, 'cruiseCl',            0.55,                 @isnumeric);  %Cruise lift coefficient
 addParameter(ip, 'ARmax',               12,                   @isnumeric);  %Maximum aspect ratio (for stiffness & weight)
-addParameter(ip, 'Cd0',                 0.045,                @isnumeric);  %Aircraft drag coeff
+addParameter(ip, 'Cd0',                 0.025,                @isnumeric);  %Aircraft drag coeff (besides fuselage and landing gear)
 
 %Propulsion System
 addParameter(ip, 'nMotors',                 8,                @isnumeric);  %Number of motors
@@ -76,7 +76,7 @@ addParameter(ip, 'costLiabilityPerYear',    22000,          @isnumeric);    %Ann
 addParameter(ip, 'hullRatePerYear',         0.045,          @isnumeric);    %Annual hull insurance rate [% of hull cost]
 addParameter(ip, 'annualServicesFees',      7700,           @isnumeric);    %Annual fees for maintenance, navigation, datalink [$/year]
 addParameter(ip, 'maintananceCostPerFH',    100,            @isnumeric);    %Maintenance cost per FH [$/FH]
-addParameter(ip, 'landingFee',              50,             @isnumeric);    %Cost per landing
+addParameter(ip, 'landingFee',              20,             @isnumeric);    %Cost per landing
 addParameter(ip, 'pilotCostRate',           280500,         @isnumeric);    %Annual pilot cost (including benefits)
 addParameter(ip, 'trainingCostRate',        9900,           @isnumeric);    %Annual training cost
 
@@ -122,12 +122,14 @@ powerHover(tipSpeed>p.vSound.*p.tipMach)=nan;                                   
 
 %Cruise performance
 sRef=p.massGross.*p.g./(0.5*p.rho.*p.cruiseCl.*p.vCruise.^2);               %Reference wing area [m^2]
+sRef(sRef>0.25*pi*p.dValue.^2)=nan;
 AR=p.dValue.^2./sRef;                                                       %Aspect ratio
 AR=sum(cat(3,AR,p.ARmax.*unit).^-6,3).^(-1/6);                              %Apply aspect ratio upper limit
 sRef=p.dValue.^2./AR;                                                       %Recompute reference wing area [m^2]
 Cl=p.massGross.*p.g./(0.5*p.rho.*sRef.*p.vCruise.^2);                       %Recompute cruise lift coefficient
-oswald=sqrt(1-(p.vCruise./p.vSound).^2)*0.85./(1+0.0096*AR);                 %Oswald efficiency factor
-cruiseCd=p.Cd0+Cl.^2./(pi*AR.*oswald);                                      %Cruise drag coefficient
+oswald=sqrt(1-(p.vCruise./p.vSound).^2)*0.85./(1+0.0096*AR);                %Oswald efficiency factor
+Cdf=0.2331*(p.massGross/1000).^(2/3)./sRef;                                 %Drag coefficient for fuselage
+cruiseCd=p.Cd0+Cdf+Cl.^2./(pi*AR.*oswald);                                  %Cruise drag coefficient
 lod=Cl./cruiseCd;                                                           %Lift-to-drag ratio
 powerCruise=p.massGross.*p.g.*p.vCruise./lod./p.cruiseEfficiency;           %Total cruise power draw [W]
 

@@ -1,7 +1,7 @@
 clear;clc
 
 %Input data range
-nRange=50;
+nRange=100;
 massGrossRange=linspace(1000,5000,nRange);  %Gross takeoff mass evaluation range [kg]
 vCruiseRange=linspace(10,110,nRange);       %Cruise speed evaluation range [m/s]
 
@@ -15,6 +15,7 @@ cellType='a';
 switch lower(cellType)
     case 'a' %Advanced cells
         specificBatteryCost=660/3600/1000;
+        specificBatteryCost=100/3600/1000;
         cellSpecificEnergy=325*3600;
         depthDegradationRate=3.662;
     case 'b' %Basic cells
@@ -23,7 +24,6 @@ switch lower(cellType)
         depthDegradationRate=3.18;
 end
 inputs={'specificBatteryCost',specificBatteryCost,'cellSpecificEnergy',cellSpecificEnergy,'depthDegradationRate',depthDegradationRate};
-
 
 for i=1:length(nPax)
     [P,R,T,L]=simpleBusinessCase(M(:),V(:),nPax(i),inputs{:},'out',{'profitPerYear';'range';'tripsPerYear';'lod'});
@@ -39,8 +39,7 @@ for i=1:length(nPax)
         figure(1);
         if i==1; clf; end
         subplot(1,length(nPax),i); hold on;
-        
-        contour(V*3.6,R,L,'linewidth',2,'ShowText','on','linecolor',[1 0.9 0.9])
+        contour(V*3.6,R,M,'linewidth',2,'ShowText','on','linecolor',[0.9 0.9 1])
         contour(V*3.6,R,P,'linewidth',2,'ShowText','on')
         xlabel('Cruise speed [km/h]')
         ylabel('Range [km]')
