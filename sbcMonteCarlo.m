@@ -10,7 +10,7 @@ clc
 rng default % Reset random number generator to make repeatable
 
 %% Monte Carlo Values
-n = 200;
+n = 400;
 
 %% Design values
 dValue = 14;
@@ -18,196 +18,247 @@ pilot = 0; % Number of pilots (non-paying passengers)
 nPax = 3;
 
 %% Assumption distributions
-a = struct();
-a(1).name = 'timeValue'; % Premium market value of time [$/s]
-a(1).mean = 2.5/60;
-a(1).std = 1/60;
+a = struct(); 
+i=1;
+a(i).name = 'timeValue'; % Premium market value of time [$/s]
+a(i).mean = 2.5/60;
+a(i).std = 1/60;
 
-a(2).name = 'distanceValue';  % Ticket price charged per distance [$/m]
-a(2).mean = 3.5/1000;
-a(2).std = 0.5/1000;
+i=i+1;
+a(i).name = 'distanceValue';  % Ticket price charged per distance [$/m]
+a(i).mean = 3.5/1000;
+a(i).std = 0.5/1000;
 
-a(3).name = 'flightTimeValue'; % Ticket price per time [$/s]
-a(3).mean = 0.25;
-a(3).std = 0.05;
+i=i+1;
+a(i).name = 'flightTimeValue'; % Ticket price per time [$/s]
+a(i).mean = 0.25;
+a(i).std = 0.05;
 
 % Vehicle
-a(4).name = 'emptyFraction'; % Empty mass fraction
-a(4).mean = 0.6;
-a(4).std = 0.03;
+i=i+1;
+a(i).name = 'emptyFraction'; % Empty mass fraction
+a(i).mean = 0.6;
+a(i).std = 0.03;
 
-a(5).name = 'hoverEfficiency'; % Hover electical efficiency (motor+controller+line)
-a(5).mean = 0.93*0.98*0.98;
-a(5).std = 0.01;
+i=i+1;
+a(i).name = 'hoverEfficiency'; % Hover electical efficiency (motor+controller+line)
+a(i).mean = 0.93*0.98*0.98;
+a(i).std = 0.01;
 
-a(6).name = 'hoverKappa'; % Account for induced tip losses
-a(6).mean = 1.1;
-a(6).std = 0.02;
+i=i+1;
+a(i).name = 'hoverKappa'; % Account for induced tip losses
+a(i).mean = 1.1;
+a(i).std = 0.02;
 
-a(7).name = 'areaRotorFraction'; % d-value area occupied by disk area
-a(7).mean = 0.32;
-a(7).std = 0.02;
+i=i+1;
+a(i).name = 'areaRotorFraction'; % d-value area occupied by disk area
+a(i).mean = 0.32;
+a(i).std = 0.02;
 
-a(8).name = 'bladeCl'; % Blade average cl
-a(8).mean = 0.7;
-a(8).std = 0.05;
+i=i+1;
+a(i).name = 'bladeCl'; % Blade average cl
+a(i).mean = 0.7;
+a(i).std = 0.05;
 
-a(9).name = 'bladeCd'; % Blade average cd
-a(9).mean = 0.018;
-a(9).std = 0.002;
+i=i+1;
+a(i).name = 'bladeCd'; % Blade average cd
+a(i).mean = 0.018;
+a(i).std = 0.002;
 
-a(10).name = 'tipMach'; % Hover tip speed limit at sea level
-a(10).mean = 0.45;
-a(10).std = 0.02;
+i=i+1;
+a(i).name = 'tipMach'; % Hover tip speed limit at sea level
+a(i).mean = 0.45;
+a(i).std = 0.02;
 
-a(11).name = 'cruiseEfficiency'; % Cruise electrical + prop efficiency (motor+controller+line+prop)
-a(11).mean = 0.9*0.96*0.98*0.81;
-a(11).std = 0.03;
+i=i+1;
+a(i).name = 'cruiseEfficiency'; % Cruise electrical + prop efficiency (motor+controller+line+prop)
+a(i).mean = 0.9*0.96*0.98*0.81;
+a(i).std = 0.03;
 
-a(12).name = 'cruiseCl'; % Cruise lift coefficient
-a(12).mean = 0.55;
-a(12).std = 0.03;
+i=i+1;
+a(i).name = 'cruiseCl'; % Cruise lift coefficient
+a(i).mean = 0.55;
+a(i).std = 0.03;
 
-a(13).name = 'Cd0'; % Cruise parasite drag coefficient
-a(13).mean = 0.045;
-a(13).std = 0.005;
+i=i+1;
+a(i).name = 'Cd0'; % Cruise parasite drag coefficient
+a(i).mean = 0.045;
+a(i).std = 0.005;
 
 % %Propulsion System
-a(14).name = 'cellSpecificEnergy'; % Cruise parasite drag coefficient
-a(14).mean = 300 * 3600;
-a(14).std = 25 * 3600; % Current cells on low end, Amprius on high end
+i=i+1;
+a(i).name = 'cellSpecificEnergy'; % Cruise parasite drag coefficient
+a(i).mean = 300 * 3600;
+a(i).std = 25 * 3600; % Current cells on low end, Amprius on high end
 
-a(15).name = 'integrationFactor'; % Cruise parasite drag coefficient
-a(15).mean = 0.75;
-a(15).std = 0.03;
+i=i+1;
+a(i).name = 'integrationFactor'; % Cruise parasite drag coefficient
+a(i).mean = 0.75;
+a(i).std = 0.03;
 
-a(16).name = 'endOfLifeFactor'; % Cruise parasite drag coefficient
-a(16).mean = 0.8;
-a(16).std = 0.0;
+i=i+1;
+a(i).name = 'endOfLifeFactor'; % Cruise parasite drag coefficient
+a(i).mean = 0.8;
+a(i).std = 0.0;
 
-a(17).name = 'depthDegradationRate'; % Cruise parasite drag coefficient
-a(17).mean = 3.42;
-a(17).std = 0.24; % Current values as optimistic
+i=i+1;
+a(i).name = 'cycleLifeFactor'; % Cruise parasite drag coefficient
+a(i).mean = 515;
+a(i).std = 100; % Current values as optimistic
 
-a(18).name = 'reserveEnergyFactor'; % Reserve energy in pack (including unusable)
-a(18).mean = 0.15;
-a(18).std = 0.02;
+i=i+1;
+a(i).name = 'depthDegradationRate'; % Cruise parasite drag coefficient
+a(i).mean = 2;
+a(i).std = 0.24; % Current values as optimistic
+
+i=i+1;
+a(i).name = 'reserveEnergyFactor'; % Reserve energy in pack (including unusable)
+a(i).mean = 0.15;
+a(i).std = 0.02;
 
 % Mission specifications
-a(19).name = 'vHeadwind'; % Sizing headwind [m/s]
-a(19).mean = 0;
-a(19).std = 3;
+i=i+1;
+a(i).name = 'vHeadwind'; % Sizing headwind [m/s]
+a(i).mean = 0;
+a(i).std = 3;
 
-a(20).name = 'tHover'; % Time spent in hover [s]
-a(20).mean = 3 * 60;
-a(20).std = 0.5 * 60;
+i=i+1;
+a(i).name = 'tHover'; % Time spent in hover [s]
+a(i).mean = 3 * 60;
+a(i).std = 0.5 * 60;
 
-a(21).name = 'tAlternate'; % Maximum time spent in alternate [s]
-a(21).mean = 900; % 15 min
-a(21).std = 150; % 2.5 min
+i=i+1;
+a(i).name = 'tAlternate'; % Maximum time spent in alternate [s]
+a(i).mean = 900; % 15 min
+a(i).std = 150; % 2.5 min
 
-a(22).name = 'dAlternate'; % Maximum distance covered for an alternate [km]
-a(22).mean = 15e3;
-a(22).std = 5e3;
+i=i+1;
+a(i).name = 'dAlternate'; % Maximum distance covered for an alternate [km]
+a(i).mean = 15e3;
+a(i).std = 5e3;
 
 % Operations Specifications
-a(23).name = 'operatingTimePerDay'; % Hours of operation per day [s/day]
-a(23).mean = 8 * 3600;
-a(23).std = 1 * 3600;
+i=i+1;
+a(i).name = 'operatingTimePerDay'; % Hours of operation per day [s/day]
+a(i).mean = 8 * 3600;
+a(i).std = 1 * 3600;
 
-a(24).name = 'scheduledAvailabilityRate'; % Rate that vehicle is in scheduled operation
-a(24).mean = 0.9;
-a(24).std = 0.02;
+i=i+1;
+a(i).name = 'scheduledAvailabilityRate'; % Rate that vehicle is in scheduled operation
+a(i).mean = 0.9;
+a(i).std = 0.02;
 
-a(25).name = 'unscheduledAvailabilityRate'; % Rate that vehicle is available (e.g. weather)
-a(25).mean = 0.9;
-a(25).std = 0.02;
+i=i+1;
+a(i).name = 'unscheduledAvailabilityRate'; % Rate that vehicle is available (e.g. weather)
+a(i).mean = 0.9;
+a(i).std = 0.02;
 
-a(26).name = 'padTurnAroundTime'; % Time between landing and takeoff [s]
-a(26).mean = 5*60;
-a(26).std = 60;
+i=i+1;
+a(i).name = 'padTurnAroundTime'; % Time between landing and takeoff [s]
+a(i).mean = 5*60;
+a(i).std = 60;
 
-a(27).name = 'deadheadRate'; % Percentage of trips that are deadhead
-a(27).mean = 0.5;
-a(27).std = 0.1;
+i=i+1;
+a(i).name = 'deadheadRate'; % Percentage of trips that are deadhead
+a(i).mean = 0.5;
+a(i).std = 0.1;
 
-a(28).name = 'operatingCostFactor'; % Fraction of costs in addition to DOC and landing fees
-a(28).mean = 1.5;
-a(28).std = 0.1;
+i=i+1;
+a(i).name = 'operatingCostFactor'; % Fraction of costs in addition to DOC and landing fees
+a(i).mean = 1.5;
+a(i).std = 0.1;
 
 % Cost Specifications
-a(29).name = 'specificBatteryCost'; % Total pack specific cost [$/J]
-a(29).mean = 400 / 3600 / 1000;
-a(29).std = 200 / 3600 / 1000;
+i=i+1;
+a(i).name = 'specificBatteryCost'; % Total pack specific cost [$/J]
+a(i).mean = 400 / 3600 / 1000;
+a(i).std = 200 / 3600 / 1000;
 
-a(30).name = 'costElectricity'; % Cost of electricty [$/J]
-a(30).mean = 0.2 / 3600 / 1000;
-a(30).std = 0.03 / 3600 / 1000;
+i=i+1;
+a(i).name = 'costElectricity'; % Cost of electricty [$/J]
+a(i).mean = 0.2 / 3600 / 1000;
+a(i).std = 0.03 / 3600 / 1000;
 
-a(31).name = 'specificHullCost'; % Specific cost of the vehicle [$/kg]
-a(31).mean = 550;
-a(31).std = 50;
+i=i+1;
+a(i).name = 'specificHullCost'; % Specific cost of the vehicle [$/kg]
+a(i).mean = 550;
+a(i).std = 50;
 
-a(32).name = 'depreciationRate'; % Annual depreciation rate [fraction of hull cost]
-a(32).mean = 0.1;
-a(32).std = 0.0;
+i=i+1;
+a(i).name = 'depreciationRate'; % Annual depreciation rate [fraction of hull cost]
+a(i).mean = 0.1;
+a(i).std = 0.0;
 
-a(33).name = 'costLiabilityPerYear'; % Annual liability cost [$/year]
-a(33).mean = 22000;
-a(33).std = 2000;
+i=i+1;
+a(i).name = 'costLiabilityPerYear'; % Annual liability cost [$/year]
+a(i).mean = 22000;
+a(i).std = 2000;
 
-a(34).name = 'hullRatePerYear'; % Annual hull insurance rate [% of hull cost]
-a(34).mean = 0.045;
-a(34).std = 0.005;
+i=i+1;
+a(i).name = 'hullRatePerYear'; % Annual hull insurance rate [% of hull cost]
+a(i).mean = 0.045;
+a(i).std = 0.005;
 
-a(35).name = 'annualServicesFees'; % Annual fees for maintenance, navigation, datalink [$/year]
-a(35).mean = 7700;
-a(35).std = 2000;
+i=i+1;
+a(i).name = 'annualServicesFees'; % Annual fees for maintenance, navigation, datalink [$/year]
+a(i).mean = 7700;
+a(i).std = 2000;
 
-a(36).name = 'maintananceCostPerFH'; % Maintenance cost per FH [$/FH]
-a(36).mean = 100;
-a(36).std = 20;
+i=i+1;
+a(i).name = 'maintananceCostPerFH'; % Maintenance cost per FH [$/FH]
+a(i).mean = 100;
+a(i).std = 20;
 
-a(37).name = 'landingFee'; % Cost per landing
-a(37).mean = 50;
-a(37).std = 10;
+i=i+1;
+a(i).name = 'landingFee'; % Cost per landing
+a(i).mean = 50;
+a(i).std = 10;
 
-a(38).name = 'pilotCostRate'; % Annual pilot cost (including benefits)
-a(38).mean = 280500;
-a(38).std = 50000;
+i=i+1;
+a(i).name = 'pilotCostRate'; % Annual pilot cost (including benefits)
+a(i).mean = 280500;
+a(i).std = 50000;
 
-a(39).name = 'trainingCostRate'; % Annual training cost
-a(39).mean = 9900;
-a(39).std = 2000;
+i=i+1;
+a(i).name = 'trainingCostRate'; % Annual training cost
+a(i).mean = 9900;
+a(i).std = 2000;
 
 % Customer Experience
-a(40).name = 'taxiPriceRate'; % Taxi ticket price per km [$/m]
-a(40).mean = 1.5/1000;
-a(40).std = 0.25/1000;
+i=i+1;
+a(i).name = 'taxiPriceRate'; % Taxi ticket price per km [$/m]
+a(i).mean = 1.5/1000;
+a(i).std = 0.25/1000;
 
-a(41).name = 'lastLegDistance'; % Distance to drive from helipad to destination [m]
-a(41).mean = 3000;
-a(41).std = 500;
+i=i+1;
+a(i).name = 'lastLegDistance'; % Distance to drive from helipad to destination [m]
+a(i).mean = 3000;
+a(i).std = 500;
 
-a(42).name = 'curbTime'; % Time to transfer from gate to curb [s]
-a(42).mean = 16 * 60;
-a(42).std = 3 * 60;
+i=i+1;
+a(i).name = 'curbTime'; % Time to transfer from gate to curb [s]
+a(i).mean = 16 * 60;
+a(i).std = 3 * 60;
 
-a(43).name = 'unloadTime'; % Time to unload from taxi [s]
-a(43).mean = 1 * 60;
-a(43).std = 20;
+i=i+1;
+a(i).name = 'unloadTime'; % Time to unload from taxi [s]
+a(i).mean = 1 * 60;
+a(i).std = 20;
 
-a(44).name = 'transferTime'; % Time to transfer from gate to helipad including security [s]
-a(44).mean = 24 * 60;
-a(44).std = 3 * 60;
+i=i+1;
+a(i).name = 'transferTime'; % Time to transfer from gate to helipad including security [s]
+a(i).mean = 24 * 60;
+a(i).std = 3 * 60;
 
-a(45).name = 'alightTime'; % Time to alight and get to curb [s]
-a(45).mean = 4 * 60;
-a(45).std = 1 * 60;
+i=i+1;
+a(i).name = 'alightTime'; % Time to alight and get to curb [s]
+a(i).mean = 4 * 60;
+a(i).std = 1 * 60;
 
-a(45).name = 'dMission'; % Mission length [m]
-a(45).mean = 50e3;
-a(45).std = 10e3;
+i=i+1;
+a(i).name = 'dMission'; % Mission length [m]
+a(i).mean = 40e3;
+a(i).std = 0e3;
 
 % Storage for inputs and outputs
 inputs = cell(n,4 + 2 * length(a));

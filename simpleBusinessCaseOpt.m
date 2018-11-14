@@ -11,27 +11,32 @@ nPax=2:5;
 unit=ones(numel(M),1);
 %Battery data
 cellType='a';
+specificHullCost=440*2.2;
 
 switch lower(cellType)
     case 'a' %Advanced cells
         specificBatteryCost=660/3600/1000;
+        cellSpecificEnergy=325*3600;
+        cycleLifeFactor=315;
+        
         specificBatteryCost=100/3600/1000;
         cellSpecificEnergy=325*3600;
-        depthDegradationRate=3.662;
+        cycleLifeFactor=1000;
     case 'b' %Basic cells
         specificBatteryCost=250/3600/1000;
         cellSpecificEnergy=240*3600;
-        depthDegradationRate=3.18;
+        cycleLifeFactor=315;
 end
-inputs={'specificBatteryCost',specificBatteryCost,'cellSpecificEnergy',cellSpecificEnergy,'depthDegradationRate',depthDegradationRate};
+inputs={'specificBatteryCost',specificBatteryCost,'cellSpecificEnergy',cellSpecificEnergy,'pilot',pilot,'specificHullCost',specificHullCost,'cycleLifeFactor',cycleLifeFactor};
 
 for i=1:length(nPax)
-    [P,R,T,L]=simpleBusinessCase(M(:),V(:),nPax(i),inputs{:},'out',{'profitPerYear';'range';'tripsPerYear';'lod'});
+    [P,R,T,L,C]=simpleBusinessCase(M(:),V(:),nPax(i),inputs{:},'out',{'profitPerYear';'range';'costPerFlightHour';'lod';'cycleLife'});
     
     P=reshape(P,nRange,nRange)/1e6;
     R=reshape(R,nRange,nRange)/1e3;
     T=reshape(T,nRange,nRange);
     L=reshape(L,nRange,nRange);
+    C=reshape(C,nRange,nRange);
     
     %Plot results
     if numel(R)>4
@@ -66,52 +71,4 @@ if numel(R)>4
         caxis(clim)
         colormap(parula)
     end
-end
-
-%%
-if 0
-nPax=2:5;
-dMission=linspace(20,70,20)*1000;
-massGrossRange=linspace(1000,5000,10);  %Gross takeoff mass evaluation range [kg]
-vCruiseRange=linspace(10,110,20);       %Cruise speed evaluation range [m/s]
-[M,V]=meshgrid(massGrossRange,vCruiseRange);
-
-lb=[0 0]; ub=[5000 200];
-options=optimoptions('fmincon','ScaleProblem','obj-and-constr','display','none');
-for i=1:length(nPax)
-    x0=[50 3000];
-    for j=1:length(dMission)
-        %Initial guess
-        P=simpleBusinessCase(M,V,nPax(i),'dMission',dMission(j),inputs{:});
-
-        if ~all(all(isnan(P)))
-            x0(1)=M(P(:)==max(P(:)));
-            x0(2)=V(P(:)==max(P(:)));
-
-            %For a given mission distance and vehicle mass, find the cruise speed
-            %that maximizes profit.
-            [x,p(j)]=fminsearch(@(x) -simpleBusinessCase(x(1),x(2),nPax(i),'dMission',dMission(j),inputs{:}),x0);
-            m(j)=x(1);
-            v(j)=x(2);
-            p(j)=-p(j);
-        else
-            m(j)=nan;
-            v(j)=nan;
-            p(j)=nan;
-        end
-    end
-    figure(2);
-    if i==1; clf; end
-    subplot(1,3,1); hold on; plot(dMission/1e3,m/1e3,'linewidth',2); ylabel('GTOW [ton]')
-    subplot(1,3,2); hold on; plot(dMission/1e3,p/1e6,'linewidth',2); ylabel('Annual profit per vehicle [$]')
-    subplot(1,3,3); hold on; plot(dMission/1e3,v*3.6,'linewidth',2); ylabel('Cruise Speed [km/h]')
-end
-
-for i=1:3
-    figure(2)
-    subplot(1,3,i)
-    xlabel('Trip Distance [km]')
-    legend('2 pax','3 pax','4 pax','5 pax')
-    grid on
-end
 end

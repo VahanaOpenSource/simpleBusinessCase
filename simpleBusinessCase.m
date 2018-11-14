@@ -36,7 +36,7 @@ addParameter(ip, 'tipMach',             0.5,                  @isnumeric);  %Hov
 addParameter(ip, 'solidityMin',         0.05,                 @isnumeric);  %Minimum solidity
 addParameter(ip, 'solidityMax',         0.25,                 @isnumeric);  %Maximum solidity
 
-addParameter(ip, 'cruiseEfficiency',    0.90*0.96*0.98*0.81,  @isnumeric);  %Cruise propeller efficiency (motor+controller+line+efficiency)
+addParameter(ip, 'cruiseEfficiency',    0.90*0.96*0.98*0.81,  @isnumeric);  %Cruise propeller efficiency (motor+controller+line+prop)
 addParameter(ip, 'cruiseCl',            0.55,                 @isnumeric);  %Cruise lift coefficient
 addParameter(ip, 'ARmax',               12,                   @isnumeric);  %Maximum aspect ratio (for stiffness & weight)
 addParameter(ip, 'Cd0',                 0.025,                @isnumeric);  %Aircraft drag coeff (besides fuselage and landing gear)
@@ -46,8 +46,8 @@ addParameter(ip, 'nMotors',                 8,                @isnumeric);  %Num
 addParameter(ip, 'cellSpecificEnergy',      240*3600,         @isnumeric);  %Specific energy of cell [Ws/kg]
 addParameter(ip, 'integrationFactor',       0.70,             @isnumeric);  %Integration factor for (pack energy vs cell energy)
 addParameter(ip, 'endOfLifeFactor',         0.80,             @isnumeric);  %Factor to define pack end of life
-addParameter(ip, 'cycleLifeFactor',         8424,             @isnumeric);  %Battery pack degradation factor (cycles=cycleLifeFactor*exp(-depthDegradationRate*dischargeDepth)/avgDischargeRate)
-addParameter(ip, 'depthDegradationRate',    3.180,            @isnumeric);  %Battery pack degradation factor (cycles=cycleLifeFactor*exp(-depthDegradationRate*dischargeDepth)/avgDischargeRate)
+addParameter(ip, 'cycleLifeFactor',         315,              @isnumeric);  %Battery pack degradation factor (cycles=cycleLifeFactor*exp(-depthDegradationRate*dischargeDepth)/avgDischargeRate)
+addParameter(ip, 'depthDegradationRate',    2,                @isnumeric);  %Battery pack degradation factor (cycles=cycleLifeFactor*exp(-depthDegradationRate*dischargeDepth)/avgDischargeRate)
 addParameter(ip, 'reserveEnergyFactor',     0.15,             @isnumeric);  %Reserve energy in pack (including unusable)
 
 %Mission Specifications
@@ -170,7 +170,7 @@ energyMission=energyCruise+energyHover;                                         
 dischargeDepth=energyMission./energyTotal;                                                  %Depth of discharge
 costBattery=energyTotal.*p.specificBatteryCost;                                             %Battery cost [$]
 dischargeRate=energyMission./tTrip./energyTotal*3600;                                       %Average mission discharge rate [C]                                       
-cycleLife=p.cycleLifeFactor.*exp(-p.depthDegradationRate.*dischargeDepth)./dischargeRate;   %Number of missions before 80% SOH
+cycleLife=p.cycleLifeFactor./(dischargeDepth.^(p.depthDegradationRate))./dischargeRate;    %Number of missions before 80% SOH
 packCostPerTrip=costBattery./cycleLife;                                                     %Cost of pack per mission [$/mission]
 energyCostPerTrip=p.costElectricity.*energyMission;                                         %Cost of electricity per mission [$/mission]
 
@@ -189,7 +189,6 @@ variableCost=energyCostPerFH+packCostPerFH+p.maintananceCostPerFH;          %Tot
 
 %Costs Summary
 costPerFlightHour=variableCost+(annualCost+p.landingFee.*tripsPerYear)./flightHoursPerYear; %Total operating cost per flight hour  [$/FH]
-costPerFlightHour=costPerFlightHour.*p.operatingCostFactor;
 
 %Passenger experience
 vDrive=16.6*range./(15000+range);                                               %Taxi speed during peak traffic [m/s]
@@ -215,11 +214,11 @@ switch p.ticketModel
 end
 
 %Business Case
-passengerLoadingRate=1+.1*(1-p.nPax);                                       %Average rate that vehicle is full when flying passengers
-revenuePerTrip=flyPrice.*nPax.*passengerLoadingRate;                        %Revenue per trip [$/mission]
-revenuePerFlightHour=revenuePerTrip./(tTrip/3600).*(1-p.deadheadRate);      %Revenue per flight hour [$/FH]
-profitPerFlightHour=revenuePerFlightHour-costPerFlightHour;                 %Profit per flight hour [$/FH]
-profitPerYear=profitPerFlightHour.*flightHoursPerYear;                      %Annual profit [$/yr]      
+passengerLoadingRate=1+.1*(1-p.nPax);                                               %Average rate that vehicle is full when flying passengers
+revenuePerTrip=flyPrice.*nPax.*passengerLoadingRate;                                %Revenue per trip [$/mission]
+revenuePerFlightHour=revenuePerTrip./(tTrip/3600).*(1-p.deadheadRate);              %Revenue per flight hour [$/FH]
+profitPerFlightHour=revenuePerFlightHour-costPerFlightHour.*p.operatingCostFactor;  %Profit per flight hour [$/FH]
+profitPerYear=profitPerFlightHour.*flightHoursPerYear;                              %Annual profit [$/yr]      
 impliedValue=(flyPrice+p.taxiPriceRate.*p.lastLegDistance...
     -drivePrice)./(tDrive-tFly)*60;                                         %Implied value [$ paid by passener per min saved]
 impliedValue(flyPrice>drivePrice & tDrive<tFly)=nan;                        %If aircraft is slower and more expensive then no value
