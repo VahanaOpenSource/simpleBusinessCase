@@ -255,11 +255,6 @@ a(i).name = 'alightTime'; % Time to alight and get to curb [s]
 a(i).mean = 4 * 60;
 a(i).std = 1 * 60;
 
-i=i+1;
-a(i).name = 'dMission'; % Mission length [m]
-a(i).mean = 40e3;
-a(i).std = 0e3;
-
 % Storage for inputs and outputs
 inputs = cell(n,4 + 2 * length(a));
 profitPerYear = zeros(n,1);

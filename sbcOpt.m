@@ -20,7 +20,8 @@ if ~all(isnan(P(:)))
 
 options = optimset('display','none');
 
-[xOpt,~,exitflag,~] = fmincon(@(x) sbcObj(x,varargin{:}),x0,[],[],[],[],lb,ub,@(x) sbcNonLinCon(x),options);
+[xOpt,~,exitflag,~] = fminsearch(@(x) sbcObj(x,varargin{:}),x0,options);
+%[xOpt,~,exitflag,~] = fmincon(@(x) sbcObj(x,varargin{:}),x0,[],[],[],[],lb,ub,@(x) sbcNonLinCon(x),options);
 massGrossOpt = xOpt(1);
 vCruiseOpt = xOpt(2);
 

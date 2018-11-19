@@ -10,7 +10,7 @@ pilot=0;
 nPax=2:5;
 unit=ones(numel(M),1);
 %Battery data
-cellType='a';
+cellType='c';
 specificHullCost=440*2.2;
 
 switch lower(cellType)
@@ -18,14 +18,14 @@ switch lower(cellType)
         specificBatteryCost=660/3600/1000;
         cellSpecificEnergy=325*3600;
         cycleLifeFactor=315;
-        
-        specificBatteryCost=100/3600/1000;
-        cellSpecificEnergy=325*3600;
-        cycleLifeFactor=1000;
     case 'b' %Basic cells
         specificBatteryCost=250/3600/1000;
         cellSpecificEnergy=240*3600;
         cycleLifeFactor=315;
+    case 'c' %Advanced cells (at scale)
+        specificBatteryCost=125/3600/1000;
+        cellSpecificEnergy=325*3600;
+        cycleLifeFactor=630;
 end
 inputs={'specificBatteryCost',specificBatteryCost,'cellSpecificEnergy',cellSpecificEnergy,'pilot',pilot,'specificHullCost',specificHullCost,'cycleLifeFactor',cycleLifeFactor};
 
@@ -44,7 +44,7 @@ for i=1:length(nPax)
         figure(1);
         if i==1; clf; end
         subplot(1,length(nPax),i); hold on;
-        contour(V*3.6,R,M,'linewidth',2,'ShowText','on','linecolor',[0.9 0.9 1])
+        contour(V*3.6,R,C,'linewidth',2,'ShowText','on','linecolor',[0.9 0.9 1])
         contour(V*3.6,R,P,'linewidth',2,'ShowText','on')
         xlabel('Cruise speed [km/h]')
         ylabel('Range [km]')
