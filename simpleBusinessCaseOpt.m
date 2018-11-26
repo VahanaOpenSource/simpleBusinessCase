@@ -7,30 +7,32 @@ vCruiseRange=linspace(10,110,nRange);       %Cruise speed evaluation range [m/s]
 
 [M,V]=meshgrid(massGrossRange,vCruiseRange); M=M'; V=V';
 pilot=0;
-nPax=2:5;
+nPax=[2:5]-pilot;
 unit=ones(numel(M),1);
-%Battery data
-cellType='c';
-specificHullCost=440*2.2;
+%Technology State
+technology='c';
 
-switch lower(cellType)
-    case 'a' %Advanced cells
-        specificBatteryCost=660/3600/1000;
-        cellSpecificEnergy=325*3600;
-        cycleLifeFactor=315;
-    case 'b' %Basic cells
+switch lower(technology)
+    case 'a' %Basic cells, EIS
         specificBatteryCost=250/3600/1000;
         cellSpecificEnergy=240*3600;
         cycleLifeFactor=315;
-    case 'c' %Advanced cells (at scale)
+        specificHullCost=440*2.2;
+    case 'b' %Advanced cells, EIS
+        specificBatteryCost=660/3600/1000;
+        cellSpecificEnergy=325*3600;
+        cycleLifeFactor=315;
+        specificHullCost=440*2.2;
+    case 'c' %Advanced cells, at scale
         specificBatteryCost=125/3600/1000;
         cellSpecificEnergy=325*3600;
-        cycleLifeFactor=630;
+        cycleLifeFactor=750;
+        specificHullCost=150*2.2;
 end
-inputs={'specificBatteryCost',specificBatteryCost,'cellSpecificEnergy',cellSpecificEnergy,'pilot',pilot,'specificHullCost',specificHullCost,'cycleLifeFactor',cycleLifeFactor};
+inputs={'specificBatteryCost',specificBatteryCost,'cellSpecificEnergy',cellSpecificEnergy,'pilot',pilot,'specificHullCost',specificHullCost,'cycleLifeFactor',cycleLifeFactor,'pilot',pilot};
 
 for i=1:length(nPax)
-    [P,R,T,L,C]=simpleBusinessCase(M(:),V(:),nPax(i),inputs{:},'out',{'profitPerYear';'range';'costPerFlightHour';'lod';'cycleLife'});
+    [P,R,T,L,C]=simpleBusinessCase(M(:),V(:),nPax(i),inputs{:},'out',{'profitPerYear';'range';'costPerFlightHour';'lod';'aircraftCost'});
     
     P=reshape(P,nRange,nRange)/1e6;
     R=reshape(R,nRange,nRange)/1e3;
@@ -44,11 +46,11 @@ for i=1:length(nPax)
         figure(1);
         if i==1; clf; end
         subplot(1,length(nPax),i); hold on;
-        contour(V*3.6,R,C,'linewidth',2,'ShowText','on','linecolor',[0.9 0.9 1])
+        contour(V*3.6,R,M,'linewidth',2,'ShowText','on','linecolor',[0.9 0.9 1])
         contour(V*3.6,R,P,'linewidth',2,'ShowText','on')
         xlabel('Cruise speed [km/h]')
         ylabel('Range [km]')
-        ylim([0 100])
+        ylim([0 70])
         
         title({'Annual profit per vehicle [$M]';[num2str(nPax(i),'%0.0f') ' pax + ' num2str(pilot,'%0.0f') ' pilot']})
         grid on
