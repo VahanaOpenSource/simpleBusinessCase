@@ -17,17 +17,17 @@ switch lower(technology)
         specificBatteryCost=250/3600/1000;
         cellSpecificEnergy=240*3600;
         cycleLifeFactor=315;
-        specificHullCost=440*2.2;
+        specificHullCost=1360;
     case 'b' %Advanced cells, EIS
         specificBatteryCost=660/3600/1000;
         cellSpecificEnergy=325*3600;
         cycleLifeFactor=315;
-        specificHullCost=440*2.2;
+        specificHullCost=1360;
     case 'c' %Advanced cells, at scale
         specificBatteryCost=125/3600/1000;
         cellSpecificEnergy=325*3600;
         cycleLifeFactor=750;
-        specificHullCost=150*2.2;
+        specificHullCost=860;
 end
 inputs={'specificBatteryCost',specificBatteryCost,'cellSpecificEnergy',cellSpecificEnergy,'pilot',pilot,'specificHullCost',specificHullCost,'cycleLifeFactor',cycleLifeFactor,'pilot',pilot};
 
