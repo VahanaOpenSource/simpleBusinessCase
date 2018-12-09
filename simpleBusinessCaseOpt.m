@@ -10,7 +10,7 @@ pilot=0;
 nPax=[2:5]-pilot;
 unit=ones(numel(M),1);
 %Technology State
-technology='c';
+technology='b';
 
 switch lower(technology)
     case 'a' %Basic cells, EIS
