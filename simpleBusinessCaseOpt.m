@@ -10,7 +10,7 @@ pilot=0;
 nPax=[2:5]-pilot;
 unit=ones(numel(M),1);
 %Technology State
-technology='b';
+technology='c';
 
 switch lower(technology)
     case 'a' %Basic cells, EIS
@@ -50,7 +50,7 @@ for i=1:length(nPax)
         contour(V*3.6,R,P,'linewidth',2,'ShowText','on')
         xlabel('Cruise speed [km/h]')
         ylabel('Range [km]')
-        ylim([0 70])
+        ylim([0 80])
         
         title({'Annual profit per vehicle [$M]';[num2str(nPax(i),'%0.0f') ' pax + ' num2str(pilot,'%0.0f') ' pilot']})
         grid on

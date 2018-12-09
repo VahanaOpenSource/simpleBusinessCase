@@ -24,7 +24,7 @@ addParameter(ip, 'g',       9.80665,    @isnumeric);                        %Gra
 addParameter(ip, 'vSound',  340.29,     @isnumeric);                        %Reference speed of sound
 
 %Vehicle Specifications
-addParameter(ip, 'emptyFraction',       0.60,                 @isnumeric);  %Empty mass fraction
+addParameter(ip, 'emptyFraction',       0.58,                 @isnumeric);  %Empty mass fraction
 addParameter(ip, 'pilotMass',           100,                  @isnumeric);  %Total pilot mass including equipment [kg]
 addParameter(ip, 'paxMass',             nan,                  @isnumeric);  %Mass allowance per passenger (including luggage) [kg]
 addParameter(ip, 'hoverEfficiency',     0.93*0.98*0.98,       @isnumeric);  %Hover propeller efficiency (motor+controller+line)
