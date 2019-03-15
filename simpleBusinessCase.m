@@ -7,9 +7,9 @@ addRequired(ip, 'vCruise',    @isnumeric);                                  %Cru
 addRequired(ip, 'nPax',       @isnumeric);                                  %Number of passengers
 
 %UAM constraints
-addParameter(ip, 'dValue',          14,         @isnumeric);                %D-value for vehicle [m]
+addParameter(ip, 'dValue',          16,         @isnumeric);                %D-value for vehicle [m]
 addParameter(ip, 'pilot',           0,          @isnumeric);                %Number of pilots (non-paying passengers)
-addParameter(ip, 'timeValue',       3/60,       @isnumeric);                %Premium market value of time [$/s]
+addParameter(ip, 'timeValue',       1.5/60,     @isnumeric);                %Premium market value of time [$/s]
 addParameter(ip, 'distanceValue',   3.5/1000,   @isnumeric);                %Ticket price charged per distance [$/m]
 addParameter(ip, 'flightTimeValue', 0.25,       @isnumeric);                %Ticket price per time [$/s]
 addParameter(ip, 'ticketModel',     'value',    @ischar);                   %Ticket price model.
@@ -19,15 +19,15 @@ addParameter(ip, 'ticketModel',     'value',    @ischar);                   %Tic
                                                                             %   all: based on minimum of all
 
 %Physical constants
-addParameter(ip, 'rho',     1.225,      @isnumeric);                        %Air density [kg/m^3]
+addParameter(ip, 'rho',     1.000,      @isnumeric);                        %Air density [kg/m^3]
 addParameter(ip, 'g',       9.80665,    @isnumeric);                        %Gravity [m/s^2]
 addParameter(ip, 'vSound',  340.29,     @isnumeric);                        %Reference speed of sound
 
 %Vehicle Specifications
-addParameter(ip, 'emptyFraction',       0.58,                 @isnumeric);  %Empty mass fraction
+addParameter(ip, 'emptyFraction',       0.55,                 @isnumeric);  %Empty mass fraction
 addParameter(ip, 'pilotMass',           100,                  @isnumeric);  %Total pilot mass including equipment [kg]
 addParameter(ip, 'paxMass',             nan,                  @isnumeric);  %Mass allowance per passenger (including luggage) [kg]
-addParameter(ip, 'hoverEfficiency',     0.93*0.98*0.98,       @isnumeric);  %Hover propeller efficiency (motor+controller+line)
+addParameter(ip, 'hoverEfficiency',     0.93*0.98*0.98*0.9,   @isnumeric);  %Hover propeller efficiency (motor+controller+line+discharge)
 addParameter(ip, 'hoverKappa',          1.1,                  @isnumeric);  %Account for induced tip losses
 addParameter(ip, 'areaRotorFraction',   0.32,                 @isnumeric);  %Fraction of d-value area occupied by rotor disks
 addParameter(ip, 'bladeCl',             0.80,                 @isnumeric);  %Blade average cl
@@ -36,25 +36,25 @@ addParameter(ip, 'tipMach',             0.5,                  @isnumeric);  %Hov
 addParameter(ip, 'solidityMin',         0.05,                 @isnumeric);  %Minimum solidity
 addParameter(ip, 'solidityMax',         0.25,                 @isnumeric);  %Maximum solidity
 
-addParameter(ip, 'cruiseEfficiency',    0.90*0.96*0.98*0.81,  @isnumeric);  %Cruise propeller efficiency (motor+controller+line+prop)
+addParameter(ip, 'cruiseEfficiency',    0.90*0.96*0.98*0.81*0.9,  @isnumeric);  %Cruise propeller efficiency (motor+controller+line+prop+discharge)
 addParameter(ip, 'cruiseCl',            0.55,                 @isnumeric);  %Cruise lift coefficient
 addParameter(ip, 'ARmax',               12,                   @isnumeric);  %Maximum aspect ratio (for stiffness & weight)
-addParameter(ip, 'Cd0',                 0.025,                @isnumeric);  %Aircraft drag coeff (besides fuselage and landing gear)
+addParameter(ip, 'Cd0',                 0.020,                @isnumeric);  %Aircraft drag coeff (besides fuselage and landing gear)
 
 %Propulsion System
 addParameter(ip, 'nMotors',                 8,                @isnumeric);  %Number of motors
 addParameter(ip, 'cellSpecificEnergy',      240*3600,         @isnumeric);  %Specific energy of cell [Ws/kg]
-addParameter(ip, 'integrationFactor',       0.70,             @isnumeric);  %Integration factor for (pack energy vs cell energy)
+addParameter(ip, 'integrationFactor',       0.75,             @isnumeric);  %Integration factor for (pack energy vs cell energy)
 addParameter(ip, 'endOfLifeFactor',         0.80,             @isnumeric);  %Factor to define pack end of life
 addParameter(ip, 'cycleLifeFactor',         315,              @isnumeric);  %Battery pack degradation factor (cycles=cycleLifeFactor*exp(-depthDegradationRate*dischargeDepth)/avgDischargeRate)
 addParameter(ip, 'depthDegradationRate',    2,                @isnumeric);  %Battery pack degradation factor (cycles=cycleLifeFactor*exp(-depthDegradationRate*dischargeDepth)/avgDischargeRate)
 addParameter(ip, 'reserveEnergyFactor',     0.15,             @isnumeric);  %Reserve energy in pack (including unusable)
 
 %Mission Specifications
-addParameter(ip, 'vHeadwind',   5,      @isnumeric);                        %Headwind [m/s]
+addParameter(ip, 'vHeadwind',   15,     @isnumeric);                        %Headwind [m/s]
 addParameter(ip, 'tHover',      3*60,   @isnumeric);                        %Time spent in hover [s]
 addParameter(ip, 'tAlternate',  10*60,  @isnumeric);                        %Maximum time spent in alternate [s]
-addParameter(ip, 'dAlternate',  15e3,   @isnumeric);                        %Maximum distance covered for an alternate [km]
+addParameter(ip, 'dAlternate',  20e3,   @isnumeric);                        %Maximum distance covered for an alternate [km]
 
 %Alternate Reference Mission Specifications
 addParameter(ip, 'dMission',    nan,    @isnumeric);                        %Maximum time spent in alternate [s]
@@ -63,20 +63,20 @@ addParameter(ip, 'dMission',    nan,    @isnumeric);                        %Max
 addParameter(ip, 'operatingTimePerDay',         8*3600, @isnumeric);        %Hours of operation per day [s/day]
 addParameter(ip, 'scheduledAvailabilityRate',   0.90,   @isnumeric);        %Rate that vehicle is in scheduled operation
 addParameter(ip, 'unscheduledAvailabilityRate', 0.90,   @isnumeric);        %Rate that vehicle is available (e.g. weather)
-addParameter(ip, 'padTurnAroundTime',           5*60,   @isnumeric);        %Time between landing and takeoff [s]
+addParameter(ip, 'padTurnAroundTime',           6*60,   @isnumeric);        %Time between landing and takeoff [s]
 addParameter(ip, 'deadheadRate',                0.3,    @isnumeric);        %Percentage of trips that are deadhead
 addParameter(ip, 'operatingCostFactor',         1.25,   @isnumeric);        %Costs in addition to DOC and landing fees
 
 %Cost Specifications
 addParameter(ip, 'specificBatteryCost',     250/3600/1000,  @isnumeric);    %Total pack specific cost [$/Ws]
 addParameter(ip, 'costElectricity',         0.20/1000/3600, @isnumeric);    %Cost of electricty [$/Ws]
-addParameter(ip, 'specificHullCost',        550,            @isnumeric);    %Specific cost of the vehicle [$/kg]
+addParameter(ip, 'specificHullCost',        840,            @isnumeric);    %Specific cost of the vehicle [$/kg]
 addParameter(ip, 'depreciationRate',        0.1,            @isnumeric);    %Annual depreciation rate [% of hull cost]
 addParameter(ip, 'costLiabilityPerYear',    22000,          @isnumeric);    %Annual liability cost [$/year]
 addParameter(ip, 'hullRatePerYear',         0.045,          @isnumeric);    %Annual hull insurance rate [% of hull cost]
 addParameter(ip, 'annualServicesFees',      7700,           @isnumeric);    %Annual fees for maintenance, navigation, datalink [$/year]
-addParameter(ip, 'maintananceCostPerFH',    100,            @isnumeric);    %Maintenance cost per FH [$/FH]
-addParameter(ip, 'landingFee',              20,             @isnumeric);    %Cost per landing
+addParameter(ip, 'maintananceCostPerFH',    75,             @isnumeric);    %Maintenance cost per FH [$/FH]
+addParameter(ip, 'landingFee',              50,             @isnumeric);    %Cost per landing
 addParameter(ip, 'pilotCostRate',           280500,         @isnumeric);    %Annual pilot cost (including benefits)
 addParameter(ip, 'trainingCostRate',        9900,           @isnumeric);    %Annual training cost
 
@@ -89,6 +89,8 @@ addParameter(ip, 'curbTime',                16*60,      @isnumeric);        %Tim
 addParameter(ip, 'unloadTime',              1*60,       @isnumeric);        %Time to unload from taxi [s]
 addParameter(ip, 'transferTime',            24*60,      @isnumeric);        %Time to transfer from gate to helipad including security [s]
 addParameter(ip, 'alightTime',              6*60,       @isnumeric);        %Time to alight and get to curb [s]
+addParameter(ip, 'trafficFactor',           1,          @isnumeric);        %Factor to reduce average speed of traffic as compared to peak traffic model
+
 
 %Output data request
 addParameter(ip, 'out',        {'profitPerYear'},       @iscell);           %Time to alight and get to curb [s]
@@ -97,6 +99,7 @@ addParameter(ip, 'out',        {'profitPerYear'},       @iscell);           %Tim
 parse(ip,massGross,vCruise,nPax,varargin{:});   %Parse inputs
 p=ip.Results;                                   %Store results structure
 unit=ones(size(p.massGross));                   %Ones matrix
+eps=0.000001;                                   %Small number used for comparisons 
 
 %Passenger mass
 if all(isnan(p.paxMass))
@@ -120,7 +123,7 @@ tipSpeed=sqrt(6*(p.massGross.*p.g./p.nMotors)./(p.rho.*diskArea.*p.bladeCl.*soli
 powerInduced=(p.massGross.*p.g./p.nMotors).^1.5./sqrt(2*p.rho.*diskArea).*p.hoverKappa; %Induced power [W]
 powerProfile=p.rho.*diskArea.*tipSpeed.^3.*solidity.*p.bladeCd/8;                       %Profile power [W]
 powerHover=p.nMotors.*(powerInduced+powerProfile)./p.hoverEfficiency;                   %Total hover power draw [W]
-powerHover(tipSpeed>p.vSound.*p.tipMach)=nan;                                           %Respect tip speed limit     
+powerHover(tipSpeed>p.vSound.*p.tipMach*(1+eps))=nan;                                           %Respect tip speed limit     
 
 %Cruise performance
 sRef=p.massGross.*p.g./(0.5*p.rho.*p.cruiseCl.*p.vCruise.^2);               %Reference wing area [m^2]
@@ -190,13 +193,14 @@ packCostPerFH=packCostPerTrip./tTrip*3600;                                  %Pac
 variableCost=energyCostPerFH+packCostPerFH+p.maintananceCostPerFH;          %Total variable cost per flight hour  [$/FH]
 
 %Costs Summary
-costPerFlightHour=variableCost+(annualCost+p.landingFee.*tripsPerYear)./flightHoursPerYear; %Total operating cost per flight hour  [$/FH]
+directOperatingCost=variableCost+annualCost./flightHoursPerYear;            %Direct operating cost per flight hour [$/FH]
+costPerFlightHour=directOperatingCost+p.landingFee.*tripsPerYear./flightHoursPerYear; %Total operating cost per flight hour  [$/FH]
 
 %Passenger experience
-vDrive=16.6*range./(15000+range);                                           %Taxi speed during peak traffic [m/s]
+vDrive=16.6*range./(15000+range)./p.trafficFactor;                          %Taxi speed during peak traffic [m/s]
 tDrive=p.curbTime+range./vDrive+p.unloadTime;                               %Taxi trip time [s]
 drivePrice=p.taxiDistanceRate.*range+p.taxiTimeRate.*tDrive+p.taxiBaseFare; %Taxi ticket price [$]
-vLast=16.6*p.lastLegDistance./(15000+p.lastLegDistance);                    %Average speed for the last leg [m/s]
+vLast=16.6*p.lastLegDistance./(15000+p.lastLegDistance)./p.trafficFactor;   %Average speed for the last leg [m/s]
 tLast=p.lastLegDistance./vLast;                                             %Time for the last leg [s]
 tFly=p.transferTime+tTrip+p.alightTime+tLast+p.unloadTime;                  %UAM trip time [s]
 pLast=p.lastLegDistance.*p.taxiDistanceRate+tLast.*p.taxiTimeRate+p.taxiBaseFare;
@@ -224,6 +228,24 @@ profitPerFlightHour=revenuePerFlightHour-costPerFlightHour.*p.operatingCostFacto
 profitPerYear=profitPerFlightHour.*flightHoursPerYear;                              %Annual profit [$/yr]      
 impliedValue=(flyPrice+pLast-drivePrice)./(tDrive-tFly)*60;                         %Implied value [$ paid by passener per min saved]
 impliedValue(flyPrice>drivePrice & tDrive<tFly)=nan;                                %If aircraft is slower and more expensive then no value
+
+%Print cost breakout
+if false
+    hourlyCost=(p.costElectricity.*energyCruise+p.maintananceCostPerFH).*p.operatingCostFactor;
+    flighlyCost=(p.costElectricity.*energyHover+p.landingFee+packCostPerTrip).*p.operatingCostFactor;
+    annualCost=annualCost.*p.operatingCostFactor;
+    
+    disp(['Per year costs: $' num2str(annualCost) '/year'])
+    disp(['Per hour costs: $' num2str(hourlyCost) '/hour'])
+    disp(['Per flight costs: $' num2str(flighlyCost) '/flight'])
+    disp('')
+    disp(['Summary: $' num2str(flighlyCost,'%0.0f') '*F + $' num2str(hourlyCost,'%0.0f') '*H + $' num2str(annualCost,'%0.0f') '*Y'])
+    disp(['Summary: $' num2str(flighlyCost,'%0.0f') '*F + $' num2str(hourlyCost+annualCost./flightHoursPerYear,'%0.0f') '*H'])
+    disp(['Simplified ticket model: $' num2str((flighlyCost+hourlyCost*3/60)/2*1.3,'%0.0f') '*F + $' num2str((hourlyCost+annualCost./flightHoursPerYear)/(vCruise*3.6)/2*1.3,'%2.2f') '*km'])
+    disp(['15 minute ticket: $' num2str((flighlyCost+(hourlyCost+annualCost./flightHoursPerYear)*0.25)*1.3/2,'%2.2f')])
+    disp(['Value ticket: $' num2str(flyPrice,'%2.2f') ' (' num2str(tTrip/60,'%1.1f') ' min)'])
+    disp(['Profit: ' num2str(profitPerFlightHour,'%0.0f')])
+end
 
 %Data out
 for i=1:length(p.out)
