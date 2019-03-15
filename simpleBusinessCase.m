@@ -19,7 +19,7 @@ addParameter(ip, 'ticketModel',     'value',    @ischar);                   %Tic
                                                                             %   all: based on minimum of all
 
 %Physical constants
-addParameter(ip, 'rho',     1.225,      @isnumeric);                        %Air density [kg/m^3]
+addParameter(ip, 'rho',     1.0,        @isnumeric);                        %Air density [kg/m^3]
 addParameter(ip, 'g',       9.80665,    @isnumeric);                        %Gravity [m/s^2]
 addParameter(ip, 'vSound',  340.29,     @isnumeric);                        %Reference speed of sound
 
@@ -44,26 +44,26 @@ addParameter(ip, 'Cd0',                 0.025,                @isnumeric);  %Air
 %Propulsion System
 addParameter(ip, 'nMotors',                 8,                @isnumeric);  %Number of motors
 addParameter(ip, 'cellSpecificEnergy',      240*3600,         @isnumeric);  %Specific energy of cell [Ws/kg]
-addParameter(ip, 'integrationFactor',       0.70,             @isnumeric);  %Integration factor for (pack energy vs cell energy)
-addParameter(ip, 'endOfLifeFactor',         0.80,             @isnumeric);  %Factor to define pack end of life
+addParameter(ip, 'integrationFactor',       0.75,             @isnumeric);  %Integration factor for (pack energy vs cell energy)
+addParameter(ip, 'endOfLifeFactor',         0.90,             @isnumeric);  %Factor to define pack end of life
 addParameter(ip, 'cycleLifeFactor',         315,              @isnumeric);  %Battery pack degradation factor (cycles=cycleLifeFactor*exp(-depthDegradationRate*dischargeDepth)/avgDischargeRate)
 addParameter(ip, 'depthDegradationRate',    2,                @isnumeric);  %Battery pack degradation factor (cycles=cycleLifeFactor*exp(-depthDegradationRate*dischargeDepth)/avgDischargeRate)
-addParameter(ip, 'reserveEnergyFactor',     0.15,             @isnumeric);  %Reserve energy in pack (including unusable)
+addParameter(ip, 'reserveEnergyFactor',     0.20,             @isnumeric);  %Reserve energy in pack (including unusable)
 
 %Mission Specifications
-addParameter(ip, 'vHeadwind',   5,      @isnumeric);                        %Headwind [m/s]
+addParameter(ip, 'vHeadwind',   15,     @isnumeric);                        %Headwind [m/s]
 addParameter(ip, 'tHover',      3*60,   @isnumeric);                        %Time spent in hover [s]
 addParameter(ip, 'tAlternate',  10*60,  @isnumeric);                        %Maximum time spent in alternate [s]
 addParameter(ip, 'dAlternate',  15e3,   @isnumeric);                        %Maximum distance covered for an alternate [km]
 
 %Alternate Reference Mission Specifications
-addParameter(ip, 'dMission',    nan,    @isnumeric);                        %Maximum time spent in alternate [s]
+addParameter(ip, 'dMission',    nan,    @isnumeric);                        %Flying mission distance [m]
 
 %Operations Specifications
 addParameter(ip, 'operatingTimePerDay',         8*3600, @isnumeric);        %Hours of operation per day [s/day]
 addParameter(ip, 'scheduledAvailabilityRate',   0.90,   @isnumeric);        %Rate that vehicle is in scheduled operation
 addParameter(ip, 'unscheduledAvailabilityRate', 0.90,   @isnumeric);        %Rate that vehicle is available (e.g. weather)
-addParameter(ip, 'padTurnAroundTime',           5*60,   @isnumeric);        %Time between landing and takeoff [s]
+addParameter(ip, 'padTurnAroundTime',           6*60,   @isnumeric);        %Time between landing and takeoff [s]
 addParameter(ip, 'deadheadRate',                0.3,    @isnumeric);        %Percentage of trips that are deadhead
 addParameter(ip, 'operatingCostFactor',         1.25,   @isnumeric);        %Costs in addition to DOC and landing fees
 
@@ -133,7 +133,7 @@ oswald=1./(1.05+0.007*pi*AR);                                               %Osw
 Cdf=0.2331*(p.massGross/1000).^(2/3)./sRef;                                 %Drag coefficient for fuselage
 cruiseCd=p.Cd0+Cdf+Cl.^2./(pi*AR.*oswald);                                  %Cruise drag coefficient
 lod=Cl./cruiseCd;                                                           %Lift-to-drag ratio
-powerCruise=p.massGross.*p.g.*p.vCruise./lod./p.cruiseEfficiency;           %Total cruise power draw [W]
+powerCruise=p.massGross.*p.g.*(p.vCruise+p.vHeadwind)./lod./p.cruiseEfficiency;           %Total cruise power draw [W]
 
 %Mission
 specificEnergy=p.cellSpecificEnergy.*p.integrationFactor.*p.endOfLifeFactor;                        %Pack useful specific energy
@@ -149,10 +149,10 @@ if all(isnan(p.dMission))
     energyCruise(energyCruise<0)=nan;                                               %Remove infeasible cases
     tCruise=energyCruise./powerCruise;                                              %Cruise time [s]
     tTrip=p.tHover+tCruise;                                                         %Total time spend flying [s]
-    range=tCruise.*(p.vCruise-p.vHeadwind);                                         %Maximum mission range [m]
+    range=tCruise.*p.vCruise;                                         %Maximum mission range [m]
 else
     range=p.dMission.*unit;                                                             %Set range if user provides reference mission range
-    tCruise=range./(p.vCruise-p.vHeadwind);                                             %Time spent in cruise [s]
+    tCruise=range./p.vCruise;                                             %Time spent in cruise [s]
     energyCruise=tCruise.*powerCruise;                                                  %Energy used on mission [s]
     temp=energyCruise>energyTotal-powerHover.*p.tHover-energyAlternate-energyReserve;   %Find infeasible cases
     energyCruise(temp)=nan;                                                             %Remove infeasible cases
@@ -224,6 +224,9 @@ profitPerFlightHour=revenuePerFlightHour-costPerFlightHour.*p.operatingCostFacto
 profitPerYear=profitPerFlightHour.*flightHoursPerYear;                              %Annual profit [$/yr]      
 impliedValue=(flyPrice+pLast-drivePrice)./(tDrive-tFly)*60;                         %Implied value [$ paid by passener per min saved]
 impliedValue(flyPrice>drivePrice & tDrive<tFly)=nan;                                %If aircraft is slower and more expensive then no value
+
+profitPerYear(profitPerYear<0)=0;
+profitPerYear = sum(profitPerYear,2);
 
 %Data out
 for i=1:length(p.out)

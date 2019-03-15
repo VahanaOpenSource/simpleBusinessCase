@@ -226,7 +226,7 @@ a(i).std = 2000;
 
 % Customer Experience
 i=i+1;
-a(i).name = 'taxiPriceRate'; % Taxi ticket price per km [$/m]
+a(i).name = 'taxiDistanceRate'; % Taxi ticket price per km [$/m]
 a(i).mean = 1.5/1000;
 a(i).std = 0.25/1000;
 
