@@ -1,0 +1,297 @@
+\documentclass[12pt, letter]{article}
+\usepackage{amsmath,amssymb,hyperref,float,graphicx}
+\graphicspath{{./images/}}
+\restylefloat{table}
+\begin{document}
+\title{Air Taxi Analytic Framework}
+This document provides an analytic framework for an air taxi service using electric vertical takeoff (eVTOL) aircraft. 
+\section{Passenger Mass}
+The Survey on Standard Weights of Passengers and Baggage\footnote{EASA 2008.C.06/30800/R20090095/30800000/FBR/RLO} funded by EASA in 2009 provides passenger weights, with some data broken down by the type of trip (business/leisure), location, gender, and age. From Table 4.7 in the reference, the average weight of male passengers with carry on baggage in the winter has a mean of 93.5 kg with a standard deviation of 15.6 kg. From Table 4.9, the average checked bag weight for males in the winter is 16.5 kg with standard deviation of 5.9 kg. Assuming independence between these two distributions, the passenger mass with baggage distribution has a mean of $\mu=110 kg$ with a standard deviation of $\sigma=16.7 kg$. The payload mass estimation is framed as a statistics problem, where the payload mass based on the passenger capacity, $n_{pax}$, is calculated such that a specified fraction of passengers, $p$, can be accommodated when independently sampled from a Gaussian population distribution. The payload mass can be calculated with the following formula,
+\begin{align}
+	m_{pax}=\mu+erf^{-1}\left(2p-1\right)\cdot\sigma\sqrt{\frac{2}{n_{pax}}}
+\end{align}
+\section{Vehicle Mass}
+The vehicle empty mass, $m_{empty}$, is defined as the portion of the vehicle gross takeoff mass, $m_{gross}$, that is not battery mass, $m_{batteries}$, or payload mass, $m_{payload}$. The ratio of the empty and gross mass, $f_{empty}$, is typically between 0.55 and 0.65. From these relationship, the battery mass may be determined with the constraint that the battery mass cannot be negative.
+\begin{align}
+	m_{empty}&=m_{gross}f_{empty}\\
+	m_{payload}&=n_{pax}m_{pax}+n_{pilot}m_{pilot}\\
+	m_{batteries}&=\max\left(0,m_{gross}-m_{empty}-m_{payload}\right)
+\end{align}
+\section{Hover Performance}
+Noise produced during hover is strongly dependent on the rotor tip Mach number, $M_{tip}$. As such, a constraint may be placed to limit the tip Mach number with $M_{tip}=0.5$ being a reasonable selection. The tip speed is given by,
+\begin{align}
+	v_{tip}=M_{tip}a
+\end{align}
+where $a$ is the speed of sound. It is assumed that the vehicle extents are circumscribed by a circle of diameter, $d_{value}$. This value is also known as the ``d-value" and is a common constraint that is applied to account for helipad size limitations. The ratio of total rotor area to that area encompassed by the $d_{value}$ is given by $f_{rotorArea}$ and is dependent on vehicle configuration. Given the number of rotors, $n_{rotors}$, the individual rotor area may be defined as,
+\begin{align}
+	A_{disk}=\frac{\pi d_{value}^2}{4} \frac{f_{rotorArea}}{n_{rotors}}
+\end{align}
+The rotor solidity, $\sigma$ is related to the individual rotor thrust, $T$, and the average blade section lift coefficient, $c_l$. Due to structural and aerodynamic limitations, the rotor solidity is typically constrained to values between $\sigma_{min}=0.05$ and $\sigma_{max}=0.25$.\footnote{Rotors with higher solidity generally have small aspect ratios and are prone to 3-d structural and aerodynamic effects. Some of these 3-d effects require special compensations or modeling techniques that may not be captured with reasonable accuracy with general global models.}
+\begin{align}
+	T&=\frac{m_{gross}g}{n_{motors}}\\
+	\sigma&=\text{median}\left(\sigma_{min},\frac{6T}{\rho v_{tip}^2 A_{disk} c_l},\sigma_{max}\right) \label{solidity}
+\end{align}
+Note that if the solidity is set to one of the limits, then the tip speed must be recalculated using Equation (\ref{solidity}). If the tip speed limit is exceeded, then the solution is considered invalid. The induced power for an individual rotor is given by,
+\begin{align}
+	P_{ind}=\frac{T^{1.5}}{\sqrt{2 \rho A_{disk}}} \kappa
+\end{align}
+where $\kappa$ accounts for non-ideal induced power penalties, including tip losses and partial wake contraction. The profile power for an individual rotor is given by,
+\begin{align}
+	P_{pro}=\frac{\rho A_{disk} v_{tip}^3 \sigma c_d}{8} \label{P_pro}
+\end{align}
+where $c_d$ is the average blade section drag coefficient. Note that the profile power estiamte produced by Equation \ref{P_pro} becomes non-conservative for tip speeds approaching Mach $0.7$. The total hover power draw is therefore,
+\begin{align}
+	P_{hover}=n_{rotors} \frac{P_{ind}+P_{pro}}{\eta_{hover}}
+\end{align}
+where $\eta_{hover}$ is the powertrain efficiency during hover. This efficiency covers losses in the motor, controller, wires, and any other losses.
+\section{Cruise Performance}
+By selecting a reasonable cruise lift coefficient, $C_L$, and prescribing a cruise speed, $V_c$, the required reference wing area, $S_{ref}$, may be determined as follows,
+\begin{align}
+	S_{ref}=\frac{2m_{gross}g}{\rho C_L V_c^2} \label{S_ref}
+\end{align}
+Given the d-value constraint, the resulting aspect ratio, $A$ may be determined using its definition. In consideration of both structural and aeroelastic constraints, a soft constraint is applied to limit the maximum aspect ratio using the p-norm.
+\begin{align}
+	A=\left\|\frac{d_{value}^2}{S_{ref}},A_{max}\right\|_p
+\end{align}
+Note that if the aspect ratio is limited by the maximum constraint, then the reference area must be calculated using the definition of the aspect ratio and cruise lift coefficient must be recalculated using Equation \ref{S_ref}. With the aspect ratio known, the Oswald efficiency factor, $e$ may be estimated as follows\footnote{\href{https://bit.ly/2BhwcbZ}{Estimating the Oswald Factor from Basic Aircraft Geometrical Parameters (Eq 4)}}.
+\begin{align}
+	e &=\frac{1}{1.05-0.007 \pi A}
+\end{align}
+The drag coefficient during cruise is given by the sum of a parasitic drag from the aerodynamic surfaces, fuselage and fairing parasitic drag\footnote{Bramwell Helicopter Dynamics, Fig. 4.15, average of Clean Fixed Wing Aircraft and Experimental Helicopters} ($C_{d_f}$), and induced drag.
+\begin{align}
+	C_{d_f}&=\frac{0.2331}{S_{ref}} \left(\frac{m_{gross}}{1000}\right)^{2/3}\\
+	C_D&=C_{D_0}+C_{d_f}+\frac{C_L^2}{\pi A e}
+\end{align}
+Finally, the power required during cruise is given by,
+\begin{align}
+	P_{cruise} = \frac{m_{gross} g \left(V_C + V_{wind}\right) C_D}{C_L \eta_{cruise}}
+\end{align}
+where $V_{wind}$ is the headwind accounted for during a typical flight and $\eta_{cruise}$ is the powertrain efficiency during cruise. This efficiency covers losses in the motor, controller, wires, and any other losses.
+\section{Mission}
+The mission performance is considered from a total available energy perspective. The energy available for a given mission is determined by the available energy in a battery pack and by the energy reserved for non-mission segments, such as alternate legs, reserve energy, and unusable energy. The useful energy available in a battery pack is given by,
+\begin{align}
+	E_{total}=\hat{E}_{cell} f_{int} f_{eol} m_{batteries}
+\end{align}
+where $\hat{E_{cell}}$ is the cell specific energy defined as the rated energy per mass of a battery cell, $f_{int}$ is the integration factor which is the ratio of total cell mass to total battery pack mass, and $f_{eol}$ is the battery end of life factor that accounts for pack degradation over the useful life of the pack. An alternate mission is sized to account for instances such as the primary landing site not being available. Under current standards, the alternate is sized to a particular time spent loitering typically in excess of twenty minutes. However, with typical primary mission lengths on the same order, these alternates will likely be redefined to account for the inherently constrainted mission profiles. To incorporate flexibility, energy used during alternates ($E_{alt}$) based on either loiter time ($t_{alt}$) or distance ($d_{alt}$) are addressed by considering the maximum energy of both cases.
+\begin{align}
+	E_{alt}=\min \left({P_C t_{alt}, \frac{P_C d_{alt}}{V_C}}\right)
+\end{align}
+Reserve energy $E_{res}$ is defined as a fraction of total energy $f_{res}$. If the primary mission length is not defined, then the maximum mission length is determined as follows,
+\begin{align}
+	E_{hover}	 &= P_{hover} t_{hover} \\
+	E_{cruise} &= E_{total} - E_{hover} - E_{alt} - E_{res} \\ 
+	t_{cruise} &= \frac{E_{cruise}}{P_{cruise}} \\ \label{t_cruise} \\
+	d_{cruise} &= t_{cruise} V_C \label{d_cruise}
+\end{align}
+The total time spent in flight is given by,
+\begin{align}
+	t_{flight}=t_{hover}+t_{cruise}
+\end{align}
+If the primary mission length is defined, then Equation \ref{d_cruise} is used to calculate the time spent in cruise and Equation \ref{t_cruise} is used to calculate the energy used in cruise. In both cases, if the energy required to complete the mission is less than zero, then the mission is considered infeasible. 
+\section{Operations}
+The maximum number of trips, $N_{day}$ that may be completed in a given day by a vehicle is simply the ratio of daily operating time, $t_{day}$, to total turn around time. The total turn around time is the sum of the trip flight time and the turn around time at the pad, $t_{turn}$ which is the total time between the aircraft landing and subsequent takeoff. The number of trips per year accounts for both the scheduled availability, $a_{sch}$, and unscheduled availability, $a_{unsch}$, each of which are defined as the ratio of the time that the aircraft is available to the total time it could be available if tasks such as maintenance and weather caused no unavailability. Finally, the flight hours per year is proportional to the product of the trip length and the trips per year.
+\begin{align}
+	N_{day}&=\frac{t_{day}}{t_{flight}+t_{turn}} \\
+	N_{year}&=365 N_{day} a_{sch} a_{unsch} \\
+	H_{year}&=\frac{N_{year} t_{flight}}{3600}
+\end{align}
+\section{Costs}
+Operating cost estimation contains many parameters that required detailed exploration, but fundametally may be broken down into several categories. These include energy cost, maintenance, battery accruals, hull accruals, insurance, training, services, and landing fees. In addition to these costs, several others exist, such as management and customer service, that may be lumped into an additional factor, $f_{ops}$. Energy costs are described as follows,
+\begin{align}
+	E_{flight}&=E_{hover}+E_{cruise} \\
+	D_{discharge}&=\frac{E_{flight}}{E_{total}} \\
+	C_{pack}&=E_{total} c_{pack}\\
+	R_{discharge}&=\frac{3600 E_{flight}}{t_{flight} E_{total}}
+\end{align}
+where $D_{discharge}$ is the depth of discharge, $C_{battery}$ is the cost of the battery pack, $c_{pack}$ is the cost per $kWh$, and $R_{discharge}$ is the average rate of discharge during the mission. One important value in determination of battery costs is the battery cycle life, $N_{battery}$, which is generally very difficult to estimate since it depends on a wide variety of factors such as pack temperature, cell balancing, charge rates, discharge rates, and many more. Nevertheless, a simplified model is proposed here that captures the trends observed for the cells under consideration.
+\begin{align}
+	N_{battery}=f_R R_{discharge}^{-k_R} D_{discharge}^{-k_D}
+\end{align}
+where $f_R$, $k_R$. and $k_D$ are determined based on the specific battery type and usage. The costs associated with energy, $C'_{energy}$, and battery pack accruals, $C'_{pack}$, is therefore,
+\begin{align}
+	\hat{C}_{pack}&=\frac{C_{pack}}{N_{battery}} \\
+	\hat{C}_{energy}&=c_{elec} E_{flight}
+\end{align}
+Considered next are annual fixed operating costs, $C_{fixed}$. These include those items that do not vary with flight hours, such as aircraft depreciation ($C_{depreciation}$), insurance ($C_{insurance}$), pilots ($C_{pilot}$), training ($C_{training}$), and other items or services ($C_{services}$).
+\begin{align}
+	C_{aircraft}&=c_{aircraft} m_{empty}\\
+	C_{insurance}&=C_{liability}+c_{hull} C_{aircraft}\\
+	C_{depreciation}&=r_{depreciation} C_{aircraft}\\
+	C_{pilot}&=c_{pilot} n_{pilot}\\
+	C_{training}&=c_{training} n_{pilot}\\
+	C_{fixed}&=C_{insurance}+C_{depreciation}+C_{pilot}+C_{training}+C_{services}
+\end{align}
+where $c_{aircraft}$ is the aircraft acquisition cost per unit mass, $C_{liability}$ is the annual liability insurance cost, $c_{hull}$ is the annual hull insurance rate, $r_{depreciation}$ is the aircraft depreciation rate, $c_{pilot}$ is the annual cost of a pilot, and $c_{training}$ is the annual cost of pilot training. Variable costs include the hourly cost of energy, battery accurals, and maintenance.
+\begin{align}
+	\dot{C}_{variable}&=\frac{\hat{C}_{energy}+\hat{C}_{battery}}{t_{flight}}+\dot{C}_{maintenance}
+\end{align}
+Finally, the total operating cost per flight hour includes the additional costs of landing fees ($c_{landing}$) and other items or services that are accounted for by including margin, $f_{operating}$.
+\begin{align}
+	\dot{C}&=\left(\dot{C}_{variable}+\frac{C_{fixed}+\hat{C}_{landing}N_{year}}{H_{year}}\right)f_{operating}
+\end{align}
+\section{Passenger Experience}
+One method to determine the value that a new transportation service adds is to perform a comparative analysis between the new service and existing services. In the case of an air taxi service, both the total trip time and total trip cost as experienced by the passenger are considered. To perform a comparative analysis, trip time and trip cost models for both air taxi and ground taxi are therefore requried. A representative case considered here in which a passenger lands at an airport and needs to transfer to a hotel. In the case of the air taxi, the trip is broken down into the following segments:
+\begin{table}[H]
+	\begin{tabular}{|p{5in}|}
+	\hline
+		\\\includegraphics[width=360px]{airCase.png}\\
+		\begin{enumerate}
+			\item Pre-cruise phase: total time, $t_{transfer}$
+			\begin{enumerate}
+			  \item Transfer from gate to vertipad: 16 minutes
+				\item Check-in and passenger briefing: 4 minutes
+				\item Passenger and luggage loading: 2 minutes
+				\item Takeoff and taxi: 2 minutes
+			\end{enumerate}
+			\item Cruise phase: at speed $V_C$
+			\item Alight phase: total time ($t_{alight}$)
+			\begin{enumerate}
+				\item Taxi and land: 2 minutes
+				\item Passenger and luggage unloading: 2 minute
+				\item Transfer to curb with cab awaiting: 2 minute
+			\end{enumerate}
+			\item Drive phase: to hotel (distance $d_{last}$) at taxi speed
+			\item Unload phase: 1 minute ($t_{unload}$)
+		\end{enumerate}
+	\\ \hline
+	\end{tabular}
+\end{table}
+\noindent In the case of the ground taxi, the trip is broken down into the following segments:
+\begin{table}[H]
+	\begin{tabular}{|p{5in}|}
+	\hline
+		\\\includegraphics[width=360px]{groundCase.png}\\
+		\begin{enumerate}
+			\item Pre-drive phase: total time ($t_{curb}$)
+			\begin{enumerate}
+			  \item Transfer from gate to curb: 15 minutes
+				\item Passenger and luggage loading: 1 minute
+			\end{enumerate}
+			\item Drive phase: at taxi speed
+			\item Unload phase: 1 minute ($t_{unload}$)
+		\end{enumerate}
+		\\ \hline
+	\end{tabular}
+\end{table}
+\noindent The total air taxi and ground taxi trip times are given by,
+\begin{align}
+	t_{drive}&=\frac{d_{cruise}}{V_{drive}\left(d_{cruise}\right)}\\
+	t_{ground}&=t_{curb}+t_{drive}+t_{unload}\\
+	t_{last}&=\frac{d_{last}}{V_{drive}\left(d_{last}\right)}+t_{unload}\\
+	t_{air}&=t_{transfer}+t_{flight}+t_{alight}+t_{last}
+\end{align}
+The proposed ground speed model during peak traffic is given by,
+\begin{align}
+	V_{drive}(d)=\left(16.6\frac{m}{s}\right)\frac{d}{15000m+d}
+\end{align}
+Several different ticket pricing schemes may also be considered. For a ground taxi, a standard fare model is used. For the air taxi, pricing schemes based on value, distance, and time are considered.
+\begin{align}
+	P_{ground}&=c_{ground}+d_{cruise} c'_{ground}+t_{drive} \dot{c}_{ground}\\
+	P_{last}&=c_{ground}+d_{last} c'_{ground}+t_{last} \dot{c}_{ground}\\
+	P_{value}&=c_{value}\left(t_{ground}-t_{fly}\right)+P_{ground}-P_{last}\\
+	P_{distance}&=d_{cruise} c_{distance}\\
+	P_{time}&=t_{flight} c_{time}
+\end{align}
+The final price that will be paid by the passenger in the case of the air taxi is the sum of the price for the flying leg ($P_{flight}$) and the price for the last ground leg ($P_{last}$).
+\section{Business Case}
+The operator business case is determined by considering all of the revenue from ticket sales as compared against the costs. The revenue per trip is dependent on the passenger loading rate ($f_{load}$) and deadhead rate ($f_{dead}$). The passenger loading rate is defined as the average fraction of seats filled during non-empty flights. In the case of a single passenger aircraft, this value should equal unity and as more seats are added the fraction filled should decrease. The deadhead rate is defined as the fraction of flights that have no paying passengers. Note that the deadhead trips are accounted for separately from the loading rate. The revenue is determined as follows,
+\begin{align}
+	\hat{R} &= P_{flight} n_{pax} f_{load} \\
+	\dot{R} &= \frac{3600\hat{R}}{t_{flight}} \left(1-f_{dead}\right)
+\end{align}
+The profit is therefore,
+\begin{align}
+	\dot{P} &= \dot{R} - \dot{C}  \\
+	P &= \dot{P} H_{year}
+\end{align}
+\section{Baseline}
+A baseline analysis was performed to determine for which combinations of range and speed would yield profitable operations. The baseline parameters are listed in Appendix \ref{baseline}
+
+
+\appendix
+\section{Baseline Input Variables} \label{baseline}
+
+The baseline parameters selected were as follows,\\\\
+\textbf{Physics Variables}
+\begin{itemize}
+	\item[$g$] Gravitational acceleration, $9.81 \frac{m}{s^2}$
+	\item[$\rho$] Air density, $1.0 \frac{kg}{m^3}$
+	\item[]
+\end{itemize}
+\textbf{Vehicle Variables}
+\begin{itemize}
+	\item[$d_{value}$] The diameter of the circle that circumscribes the top view of the vehicle, $14 m$ 
+	\item[$f_{empty}$] Empty mass fraction, $0.58$
+	\item[$f_{rotor}$] Fraction of d-value area covered by rotors in hover, $0.32$
+	\item[]
+\end{itemize}
+\textbf{Hover Variables}
+\begin{itemize}
+	\item[$n_{rotors}$] Number of motors, $8$
+	\item[$\eta_{hover}$] Hover electrical efficiency, $0.89$
+	\item[$\kappa$] Induced power penalty, $1.1$
+	\item[$c_l$] Blade section average lift coefficient, $0.80$
+	\item[$c_d$] Blade section average drag coefficient, $0.02$
+	\item[]
+\end{itemize}
+\textbf{Cruise Variables}
+\begin{itemize}
+	\item[$\eta_{cruise}$] Cruise electrical efficiency, $0.69$
+	\item[$C_L$] Cruise lift coefficient, $0.55$
+	\item[$AR_{max}$] Maximum aspect ratio, $12$
+	\item[$C_{d_0}$] Parasitic drag from aerodynamic surfaces, $0.025$
+	\item[]
+\end{itemize}
+\textbf{Battery Variables}
+\begin{itemize}
+	\item[$\hat{E}_{cell}$] Cell specific energy, $240 \frac{Wh}{kg}$
+	\item[$f_{int}$] Pack integration factor, $0.75$
+	\item[$f_{eol}$] Cell end of life factor, $0.90$
+	\item[$k_R$] Cell degradation coefficient due to average discharge rate, $1$
+	\item[$k_D$] Cell degradation coefficient due to depth of discharge rate, $2$
+	\item[]
+\end{itemize}
+\textbf{Mission Variables}
+\begin{itemize}
+	\item[$f_{res}$] Reserve energy factor, $0.20$
+	\item[$f_{wind}$] Headwind encountered in flight, $15 \frac{m}{s}$
+	\item[$t_{hover}$] Time spent in hover, $3 min$
+	\item[$t_{alt}$] Alternate mission time, $10 min$
+	\item[$d_{alt}$] Alternate mission distance, $15 km$
+	\item[$t_{day}$] Operating time per day, $8 hr$
+	\item[$a_{sch}$] Scheduled availability rate, $0.9$
+	\item[$a_{unsch}$] Unscheduled availability rate, $0.9$
+	\item[$t_{turn}$] Pad turn-around time, $6 min$
+	\item[$f_{dead}$] Deadhead rate, $0.3$
+	\item[$f_{operating}$] Operating cost factor, $1.25$
+	\item[]
+\end{itemize}
+\textbf{Cost Variables}
+\begin{itemize}
+	\item[$c_{pack}$] Specific battery cost, $250 \frac{\$}{kWh}$
+	\item[$c_{elec}$] Cost of electricity, $0.2 \frac{\$}{kWh}$
+	\item[$c_{aircraft}$] Specific hull cost, $550 \frac{\$}{kg}$
+	\item[$r_{depreciation}$] Aircraft depreciation rate, $0.1$
+	\item[$C_{liability}$] Annual liability insurance cost, $\$22000$
+	\item[$c_{hull}$] Annual hull insurance specific cost, $0.045 \frac{\$}{kg}$
+	\item[$C_{services}$] Annual services costs, $\$7700$
+	\item[$\dot{C}_{maintenance}$] Hourly maintenance rate, $\$100$
+	\item[$\hat{C}_{landing}$] Landing fee, $\$20$
+	\item[$c_{pilot}$] Annual cost per pilot (including benefits), $\$280500$
+	\item[$c_{training}$] Annual training cost per pilot, $\$9900$
+	\item[]
+\end{itemize}
+\textbf{Travel Variables}
+\begin{itemize}
+	\item[$c_{ground}$] Taxi base fare, $\$3.5$
+	\item[$c'_{ground}$] Taxi distance rate, $1.7 \frac{\$}{km}$
+	\item[$\dot{c}_{ground}$] Taxi time rate, $0.55 \frac{\$}{min}$
+	\item[$d_{last}$] Last leg distance, $3 km$
+	\item[$t_{curb}$] Time to get from gate to drive away (for taxi trip), $16 min$
+	\item[$t_{transfer}$] Time to get from gate to hover (for aircraft trip), $24 min$
+	\item[$t_{unload}$] Time to unload luggage from taxi and exit, $1 min$
+	\item[$t_{alight}$] Time to unload luggage from aircraft and exit, $6 min$
+	\item[$c_{value}$] The passenger willingness to pay for time saved, $3\frac{\$}{min}$
+	\item[]
+\end{itemize}
+\end{document}

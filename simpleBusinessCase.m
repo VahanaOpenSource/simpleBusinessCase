@@ -48,7 +48,7 @@ addParameter(ip, 'integrationFactor',       0.75,             @isnumeric);  %Int
 addParameter(ip, 'endOfLifeFactor',         0.80,             @isnumeric);  %Factor to define pack end of life
 addParameter(ip, 'cycleLifeFactor',         315,              @isnumeric);  %Battery pack degradation factor (cycles=cycleLifeFactor*exp(-depthDegradationRate*dischargeDepth)/avgDischargeRate)
 addParameter(ip, 'depthDegradationRate',    2,                @isnumeric);  %Battery pack degradation factor (cycles=cycleLifeFactor*exp(-depthDegradationRate*dischargeDepth)/avgDischargeRate)
-addParameter(ip, 'reserveEnergyFactor',     0.15,             @isnumeric);  %Reserve energy in pack (including unusable)
+addParameter(ip, 'reserveEnergyFactor',     0.20,             @isnumeric);  %Reserve energy in pack (including unusable)
 
 %Mission Specifications
 addParameter(ip, 'vHeadwind',   15,     @isnumeric);                        %Headwind [m/s]
@@ -57,7 +57,7 @@ addParameter(ip, 'tAlternate',  10*60,  @isnumeric);                        %Max
 addParameter(ip, 'dAlternate',  20e3,   @isnumeric);                        %Maximum distance covered for an alternate [km]
 
 %Alternate Reference Mission Specifications
-addParameter(ip, 'dMission',    nan,    @isnumeric);                        %Maximum time spent in alternate [s]
+addParameter(ip, 'dMission',    nan,    @isnumeric);                        %Flying mission distance [m]
 
 %Operations Specifications
 addParameter(ip, 'operatingTimePerDay',         8*3600, @isnumeric);        %Hours of operation per day [s/day]
@@ -136,7 +136,7 @@ oswald=1./(1.05+0.007*pi*AR);                                               %Osw
 Cdf=0.2331*(p.massGross/1000).^(2/3)./sRef;                                 %Drag coefficient for fuselage
 cruiseCd=p.Cd0+Cdf+Cl.^2./(pi*AR.*oswald);                                  %Cruise drag coefficient
 lod=Cl./cruiseCd;                                                           %Lift-to-drag ratio
-powerCruise=p.massGross.*p.g.*p.vCruise./lod./p.cruiseEfficiency;           %Total cruise power draw [W]
+powerCruise=p.massGross.*p.g.*(p.vCruise+p.vHeadwind)./lod./p.cruiseEfficiency;           %Total cruise power draw [W]
 
 %Mission
 specificEnergy=p.cellSpecificEnergy.*p.integrationFactor.*p.endOfLifeFactor;                        %Pack useful specific energy
@@ -152,10 +152,10 @@ if all(isnan(p.dMission))
     energyCruise(energyCruise<0)=nan;                                               %Remove infeasible cases
     tCruise=energyCruise./powerCruise;                                              %Cruise time [s]
     tTrip=p.tHover+tCruise;                                                         %Total time spend flying [s]
-    range=tCruise.*(p.vCruise-p.vHeadwind);                                         %Maximum mission range [m]
+    range=tCruise.*p.vCruise;                                         %Maximum mission range [m]
 else
     range=p.dMission.*unit;                                                             %Set range if user provides reference mission range
-    tCruise=range./(p.vCruise-p.vHeadwind);                                             %Time spent in cruise [s]
+    tCruise=range./p.vCruise;                                             %Time spent in cruise [s]
     energyCruise=tCruise.*powerCruise;                                                  %Energy used on mission [s]
     temp=energyCruise>energyTotal-powerHover.*p.tHover-energyAlternate-energyReserve;   %Find infeasible cases
     energyCruise(temp)=nan;                                                             %Remove infeasible cases
