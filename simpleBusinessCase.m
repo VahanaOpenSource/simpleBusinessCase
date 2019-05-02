@@ -107,7 +107,7 @@ p=ip.Results;                                   %Store results structure
 unit=ones(size(p.massGross));                   %Ones matrix
 eps=0.000001;                                   %Small number used for comparisons 
 
-%Passenger mass
+%% Passenger mass
 if all(isnan(p.paxMass))
     meanPaxMass=111;                                                        %Mean passenger mass (winter with carryon)[kg]
     devPaxMass=18.6;                                                        %Standard deviation of passenger mass (winter with carryon)[kg]
@@ -115,12 +115,12 @@ if all(isnan(p.paxMass))
     paxMass=meanPaxMass+erfinv(2*pAddressed-1)*sqrt(2./p.nPax)*devPaxMass;  %Mass allowance per passenger (including luggage)
 end
 
-%Mass breakdown
+%% Mass breakdown
 payload=p.nPax.*paxMass+p.pilotMass*p.pilot;                                %Total passenger mass
 massEmpty=p.massGross.*p.emptyFraction;                                     %Empty mass [kg]
 massBatteries=max(0,p.massGross-massEmpty-payload);                         %Battery mass [kg]
 
-%Hover performance
+%% Hover performance
 tipSpeed=p.vSound.*p.tipMach;                                                           %Rotor tip speed [m/s]
 diskArea=(0.25*pi*p.dValue.^2).*p.areaRotorFraction./p.nMotors;                         %Disk area per rotor [m^2]                                                                     
 solidity=6*(p.massGross.*p.g./p.nMotors)./(p.rho.*tipSpeed.^2.*diskArea.*p.bladeCl);    %Solidity
@@ -129,9 +129,9 @@ tipSpeed=sqrt(6*(p.massGross.*p.g./p.nMotors)./(p.rho.*diskArea.*p.bladeCl.*soli
 powerInduced=(p.massGross.*p.g./p.nMotors).^1.5./sqrt(2*p.rho.*diskArea).*p.hoverKappa; %Induced power [W]
 powerProfile=p.rho.*diskArea.*tipSpeed.^3.*solidity.*p.bladeCd/8;                       %Profile power [W]
 powerHover=p.nMotors.*(powerInduced+powerProfile)./p.hoverEfficiency;                   %Total hover power draw [W]
-powerHover(tipSpeed>p.vSound.*p.tipMach*(1+eps))=nan;                                           %Respect tip speed limit     
+powerHover(tipSpeed>p.vSound.*p.tipMach*(1+eps))=nan;                                   %Respect tip speed limit     
 
-%Cruise performance
+%% Cruise performance
 sRef=p.massGross.*p.g./(0.5*p.rho.*p.cruiseCl.*p.vCruise.^2);               %Reference wing area [m^2]
 sRef(sRef>0.25*pi*p.dValue.^2)=nan;
 AR=p.dValue.^2./sRef;                                                       %Aspect ratio
@@ -144,7 +144,7 @@ cruiseCd=p.Cd0+Cdf+Cl.^2./(pi*AR.*oswald);                                  %Cru
 lod=Cl./cruiseCd;                                                           %Lift-to-drag ratio
 powerCruise=p.massGross.*p.g.*p.vCruise./lod./p.cruiseEfficiency;           %Total cruise power draw [W]
 
-%Mission
+%% Mission
 specificEnergy=p.cellSpecificEnergy.*p.integrationFactor.*p.endOfLifeFactor;                        %Pack useful specific energy
 energyTotal=specificEnergy.*massBatteries;                                                          %Usable energy stored in batteries [Ws]
 energyAlternate=max(cat(3,powerCruise.*p.tAlternate,powerCruise.*p.dAlternate./(p.vCruise-p.vHeadwind)),[],3);    %Energy used during alternate (2 types of alternate considered) [Ws]
@@ -169,12 +169,12 @@ else
     tTrip(temp)=nan;                                                                    %Remove infeasible cases
 end
 
-%Operations
+%% Operations
 tripsPerDay=p.operatingTimePerDay./(tTrip+p.padTurnAroundTime);                             %Number of trips that can be completed in a day
 tripsPerYear=365*tripsPerDay.*p.scheduledAvailabilityRate.*p.unscheduledAvailabilityRate;   %Number of trips completed in 1 year
 flightHoursPerYear=tripsPerYear.*tTrip/3600;                                                %Number of flight hours completed in 1 year
 
-%Costs
+%% Costs
 %Energy Costs
 energyHover=powerHover.*p.tHover;
 energyMission=energyCruise+energyHover;                                                     %Energy used during the primary mission
@@ -204,7 +204,7 @@ variableCost=energyCostPerFH+packCostPerFH+p.maintananceCostPerFH;          %Tot
 directOperatingCost=variableCost+annualCost./flightHoursPerYear;            %Direct operating cost per flight hour [$/FH]
 costPerFlightHour=directOperatingCost+p.landingFee.*tripsPerYear./flightHoursPerYear; %Total operating cost per flight hour  [$/FH]
 
-%Passenger experience
+%% Passenger experience
 vDrive=11.3*range./(8530+range)./p.trafficFactor;                          %Taxi speed during peak traffic [m/s]
 tDrive=p.curbTime+range./vDrive+p.unloadTime;                               %Taxi trip time [s]
 drivePrice=p.taxiDistanceRate.*range+p.taxiTimeRate.*tDrive+p.taxiBaseFare; %Taxi ticket price [$]
@@ -228,7 +228,7 @@ switch p.ticketModel
         error('Ticket model name not recognized');
 end
 
-%Business Case
+%% Business Case
 passengerLoadingRate=1+0.1*(1-p.nPax);                                              %Average rate that vehicle is full when flying passengers
 revenuePerTrip=flyPrice.*p.nPax.*passengerLoadingRate;                              %Revenue per trip [$/mission]
 revenuePerFlightHour=revenuePerTrip./(tTrip/3600).*(1-p.deadheadRate);                                  %Revenue per flight hour [$/FH]
@@ -237,27 +237,7 @@ profitPerYear=profitPerFlightHour.*flightHoursPerYear;                          
 impliedValue=(flyPrice+pLast-drivePrice)./(tDrive-tFly)*60;                         %Implied value [$ paid by passener per min saved]
 impliedValue(flyPrice>drivePrice & tDrive<tFly)=nan;                                %If aircraft is slower and more expensive then no value
 
-%Print cost breakout
-if false
-    hourlyCost=(p.costElectricity.*energyCruise+p.maintananceCostPerFH).*p.operatingCostFactor;
-    flighlyCost=(p.costElectricity.*energyHover+p.landingFee+packCostPerTrip).*p.operatingCostFactor;
-    annualCost=annualCost.*p.operatingCostFactor;
-    
-    disp(['Per year costs: $' num2str(annualCost) '/year'])
-    disp(['Per hour costs: $' num2str(hourlyCost) '/hour'])
-    disp(['Per flight costs: $' num2str(flighlyCost) '/flight'])
-    disp('')
-    disp(['Summary: $' num2str(flighlyCost,'%0.0f') '*F + $' num2str(hourlyCost,'%0.0f') '*H + $' num2str(annualCost,'%0.0f') '*Y'])
-    disp(['Summary: $' num2str(flighlyCost,'%0.0f') '*F + $' num2str(hourlyCost+annualCost./flightHoursPerYear,'%0.0f') '*H'])
-    disp(['Simplified ticket model: $' num2str((flighlyCost+hourlyCost*3/60)/2*1.3,'%0.0f') '*F + $' num2str((hourlyCost+annualCost./flightHoursPerYear)/(vCruise*3.6)/2*1.3,'%2.2f') '*km'])
-    disp(['15 minute ticket: $' num2str((flighlyCost+(hourlyCost+annualCost./flightHoursPerYear)*0.25)*1.3/2,'%2.2f')])
-    disp('')
-    disp(['Taxi ticket: $' num2str(drivePrice,'%2.2f') ' (' num2str(tDrive/60,'%1.1f') ' min)'])
-    disp(['Value ticket: $' num2str(flyPrice+pLast,'%2.2f') ' (' num2str(tFly/60,'%1.1f') ' min)'])
-    disp(['Profit: $' num2str(profitPerFlightHour,'%0.0f') '/FH'])
-end
-
-% Profitability metric
+%% Profitability metric
 theta=4.8510; k=3.9761;                                                     %PDF shape factors
 tripPDF=(p.dMission/1000).^(k-1).*...                                       %PDF of trip lengths
         exp(-p.dMission/1000/theta)/gamma(k)/(theta^k); 
