@@ -10,7 +10,7 @@ clc
 rng default % Reset random number generator to make repeatable
 
 %% Monte Carlo Values
-n = 400;
+n = 100;
 
 %% Design values
 dValue = 14;
@@ -170,7 +170,7 @@ a(i).std = 0.1;
 
 % Cost Specifications
 i=i+1;
-a(i).name = 'specificBatteryCost'; % Total pack specific cost [$/J]
+a(i).name = 'specificCellCost'; % Total pack specific cost [$/J]
 a(i).mean = 400 / 3600 / 1000;
 a(i).std = 200 / 3600 / 1000;
 
