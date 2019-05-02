@@ -9,7 +9,7 @@ addRequired(ip, 'nPax',       @isnumeric);                                  %Num
 %UAM constraints
 addParameter(ip, 'dValue',          16,         @isnumeric);                %D-value for vehicle [m]
 addParameter(ip, 'pilot',           0,          @isnumeric);                %Number of pilots (non-paying passengers)
-addParameter(ip, 'timeValue',       1.5/60,     @isnumeric);                %Premium market value of time [$/s]
+addParameter(ip, 'timeValue',       3/60,       @isnumeric);                %Premium market value of time [$/s]
 addParameter(ip, 'distanceValue',   3.5/1000,   @isnumeric);                %Ticket price charged per distance [$/m]
 addParameter(ip, 'flightTimeValue', 0.25,       @isnumeric);                %Ticket price per time [$/s]
 addParameter(ip, 'ticketModel',     'value',    @ischar);                   %Ticket price model.
@@ -24,7 +24,7 @@ addParameter(ip, 'g',       9.80665,    @isnumeric);                        %Gra
 addParameter(ip, 'vSound',  340.29,     @isnumeric);                        %Reference speed of sound
 
 %Vehicle Specifications
-addParameter(ip, 'emptyFraction',       0.55,                 @isnumeric);  %Empty mass fraction
+addParameter(ip, 'emptyFraction',       0.58,                 @isnumeric);  %Empty mass fraction
 addParameter(ip, 'pilotMass',           100,                  @isnumeric);  %Total pilot mass including equipment [kg]
 addParameter(ip, 'paxMass',             nan,                  @isnumeric);  %Mass allowance per passenger (including luggage) [kg]
 addParameter(ip, 'hoverEfficiency',     0.93*0.98*0.98*0.9,   @isnumeric);  %Hover propeller efficiency (motor+controller+line+discharge)
@@ -38,6 +38,7 @@ addParameter(ip, 'solidityMax',         0.25,                 @isnumeric);  %Max
 
 addParameter(ip, 'cruiseEfficiency',    0.90*0.96*0.98*0.81*0.9,  @isnumeric);  %Cruise propeller efficiency (motor+controller+line+prop+discharge)
 addParameter(ip, 'cruiseCl',            0.55,                 @isnumeric);  %Cruise lift coefficient
+addParameter(ip, 'ARmin',               3,                    @isnumeric);  %Maximum aspect ratio (for stiffness & weight)
 addParameter(ip, 'ARmax',               12,                   @isnumeric);  %Maximum aspect ratio (for stiffness & weight)
 addParameter(ip, 'Cd0',                 0.020,                @isnumeric);  %Aircraft drag coeff (besides fuselage and landing gear)
 
@@ -52,7 +53,7 @@ addParameter(ip, 'reserveEnergyFactor',     0.20,             @isnumeric);  %Res
 
 %Mission Specifications
 addParameter(ip, 'vHeadwind',   15,     @isnumeric);                        %Headwind [m/s]
-addParameter(ip, 'tHover',      3*60,   @isnumeric);                        %Time spent in hover [s]
+addParameter(ip, 'tHover',      4*60,   @isnumeric);                        %Time spent in hover [s]
 addParameter(ip, 'tAlternate',  10*60,  @isnumeric);                        %Maximum time spent in alternate [s]
 addParameter(ip, 'dAlternate',  20e3,   @isnumeric);                        %Maximum distance covered for an alternate [km]
 
@@ -68,7 +69,12 @@ addParameter(ip, 'deadheadRate',                0.3,    @isnumeric);        %Per
 addParameter(ip, 'operatingCostFactor',         1.25,   @isnumeric);        %Costs in addition to DOC and landing fees
 
 %Cost Specifications
-addParameter(ip, 'specificBatteryCost',     250/3600/1000,  @isnumeric);    %Total pack specific cost [$/Ws]
+addParameter(ip, 'specificCellCost',        250/3600/1000,  @isnumeric);    %Total cell specific cost [$/Ws]
+addParameter(ip, 'basePackCost',            1275,           @isnumeric);    %Pack base cost [$]
+addParameter(ip, 'specificPackCost',        132.5/3600/1000,@isnumeric);    %Pack specific cost [$/Ws]
+addParameter(ip, 'specificCoolingCost',     5/3600/1000,    @isnumeric);    %Pack cooling system specific cost [$/Cavg/Ws]
+addParameter(ip, 'packOverhead',            0.13,           @isnumeric);    %Pack overhead (% of total pack cost)
+addParameter(ip, 'nPacks',                  4,              @isnumeric);    %Number of battery packs
 addParameter(ip, 'costElectricity',         0.20/1000/3600, @isnumeric);    %Cost of electricty [$/Ws]
 addParameter(ip, 'specificHullCost',        840,            @isnumeric);    %Specific cost of the vehicle [$/kg]
 addParameter(ip, 'depreciationRate',        0.1,            @isnumeric);    %Annual depreciation rate [% of hull cost]
@@ -105,7 +111,7 @@ eps=0.000001;                                   %Small number used for compariso
 if all(isnan(p.paxMass))
     meanPaxMass=111;                                                        %Mean passenger mass (winter with carryon)[kg]
     devPaxMass=18.6;                                                        %Standard deviation of passenger mass (winter with carryon)[kg]
-    pAddressed=0.95;                                                        %Percent of passenger accomodated
+    pAddressed=0.6;                                                         %Percent of passenger accomodated
     paxMass=meanPaxMass+erfinv(2*pAddressed-1)*sqrt(2./p.nPax)*devPaxMass;  %Mass allowance per passenger (including luggage)
 end
 
@@ -129,19 +135,19 @@ powerHover(tipSpeed>p.vSound.*p.tipMach*(1+eps))=nan;                           
 sRef=p.massGross.*p.g./(0.5*p.rho.*p.cruiseCl.*p.vCruise.^2);               %Reference wing area [m^2]
 sRef(sRef>0.25*pi*p.dValue.^2)=nan;
 AR=p.dValue.^2./sRef;                                                       %Aspect ratio
-AR=sum(cat(3,AR,p.ARmax.*unit).^-6,3).^(-1/6);                              %Apply aspect ratio upper limit
+AR=sum(cat(p.ARmin,AR,p.ARmax.*unit).^-12,3).^(-1/12);                      %Apply aspect ratio upper limit
 sRef=p.dValue.^2./AR;                                                       %Recompute reference wing area [m^2]
 Cl=p.massGross.*p.g./(0.5*p.rho.*sRef.*p.vCruise.^2);                       %Recompute cruise lift coefficient
 oswald=1./(1.05+0.007*pi*AR);                                               %Oswald efficiency factor
 Cdf=0.2331*(p.massGross/1000).^(2/3)./sRef;                                 %Drag coefficient for fuselage
 cruiseCd=p.Cd0+Cdf+Cl.^2./(pi*AR.*oswald);                                  %Cruise drag coefficient
 lod=Cl./cruiseCd;                                                           %Lift-to-drag ratio
-powerCruise=p.massGross.*p.g.*(p.vCruise+p.vHeadwind)./lod./p.cruiseEfficiency;           %Total cruise power draw [W]
+powerCruise=p.massGross.*p.g.*p.vCruise./lod./p.cruiseEfficiency;           %Total cruise power draw [W]
 
 %Mission
 specificEnergy=p.cellSpecificEnergy.*p.integrationFactor.*p.endOfLifeFactor;                        %Pack useful specific energy
 energyTotal=specificEnergy.*massBatteries;                                                          %Usable energy stored in batteries [Ws]
-energyAlternate=min(cat(3,powerCruise.*p.tAlternate,powerCruise.*p.dAlternate./p.vCruise),[],3);    %Energy used during alternate (2 types of alternate considered) [Ws]
+energyAlternate=max(cat(3,powerCruise.*p.tAlternate,powerCruise.*p.dAlternate./(p.vCruise-p.vHeadwind)),[],3);    %Energy used during alternate (2 types of alternate considered) [Ws]
 energyReserve=energyTotal.*p.reserveEnergyFactor;                                                   %Reserve energy
 
 %If the mission length is not defined, then the maximum primary mission 
@@ -152,10 +158,10 @@ if all(isnan(p.dMission))
     energyCruise(energyCruise<0)=nan;                                               %Remove infeasible cases
     tCruise=energyCruise./powerCruise;                                              %Cruise time [s]
     tTrip=p.tHover+tCruise;                                                         %Total time spend flying [s]
-    range=tCruise.*p.vCruise;                                         %Maximum mission range [m]
+    range=tCruise.*(p.vCruise-p.vHeadwind);                                         %Maximum mission range [m]
 else
     range=p.dMission.*unit;                                                             %Set range if user provides reference mission range
-    tCruise=range./p.vCruise;                                             %Time spent in cruise [s]
+    tCruise=range./(p.vCruise-p.vHeadwind);                                             %Time spent in cruise [s]
     energyCruise=tCruise.*powerCruise;                                                  %Energy used on mission [s]
     temp=energyCruise>energyTotal-powerHover.*p.tHover-energyAlternate-energyReserve;   %Find infeasible cases
     energyCruise(temp)=nan;                                                             %Remove infeasible cases
@@ -173,9 +179,11 @@ flightHoursPerYear=tripsPerYear.*tTrip/3600;                                    
 energyHover=powerHover.*p.tHover;
 energyMission=energyCruise+energyHover;                                                     %Energy used during the primary mission
 dischargeDepth=energyMission./energyTotal;                                                  %Depth of discharge
-costBattery=energyTotal.*p.specificBatteryCost;                                             %Battery cost [$]
-dischargeRate=energyMission./tTrip./energyTotal*3600;                                       %Average mission discharge rate [C]                                       
-cycleLife=p.cycleLifeFactor./(dischargeDepth.^(p.depthDegradationRate))./dischargeRate;    %Number of missions before 80% SOH
+dischargeRate=energyMission./tTrip./energyTotal*3600;                                       %Average mission discharge rate [C] 
+costBattery=((p.specificPackCost+p.specificCoolingCost*dischargeRate+...                    %Battery cost [$]
+    p.specificCellCost).*energyTotal+p.basePackCost.*p.nPacks).*...
+    (1+p.packOverhead./(1-p.packOverhead));
+cycleLife=p.cycleLifeFactor./(dischargeDepth.^(p.depthDegradationRate))./dischargeRate;     %Number of missions before 80% SOH
 packCostPerTrip=costBattery./cycleLife;                                                     %Cost of pack per mission [$/mission]
 energyCostPerTrip=p.costElectricity.*energyMission;                                         %Cost of electricity per mission [$/mission]
 
@@ -197,7 +205,7 @@ directOperatingCost=variableCost+annualCost./flightHoursPerYear;            %Dir
 costPerFlightHour=directOperatingCost+p.landingFee.*tripsPerYear./flightHoursPerYear; %Total operating cost per flight hour  [$/FH]
 
 %Passenger experience
-vDrive=16.6*range./(15000+range)./p.trafficFactor;                          %Taxi speed during peak traffic [m/s]
+vDrive=11.3*range./(8530+range)./p.trafficFactor;                          %Taxi speed during peak traffic [m/s]
 tDrive=p.curbTime+range./vDrive+p.unloadTime;                               %Taxi trip time [s]
 drivePrice=p.taxiDistanceRate.*range+p.taxiTimeRate.*tDrive+p.taxiBaseFare; %Taxi ticket price [$]
 vLast=16.6*p.lastLegDistance./(15000+p.lastLegDistance)./p.trafficFactor;   %Average speed for the last leg [m/s]
@@ -221,9 +229,9 @@ switch p.ticketModel
 end
 
 %Business Case
-passengerLoadingRate=1+.1*(1-p.nPax);                                               %Average rate that vehicle is full when flying passengers
-revenuePerTrip=flyPrice.*nPax.*passengerLoadingRate;                                %Revenue per trip [$/mission]
-revenuePerFlightHour=revenuePerTrip./(tTrip/3600).*(1-p.deadheadRate);              %Revenue per flight hour [$/FH]
+passengerLoadingRate=1+0.1*(1-p.nPax);                                              %Average rate that vehicle is full when flying passengers
+revenuePerTrip=flyPrice.*p.nPax.*passengerLoadingRate;                              %Revenue per trip [$/mission]
+revenuePerFlightHour=revenuePerTrip./(tTrip/3600).*(1-p.deadheadRate);                                  %Revenue per flight hour [$/FH]
 profitPerFlightHour=revenuePerFlightHour-costPerFlightHour.*p.operatingCostFactor;  %Profit per flight hour [$/FH]
 profitPerYear=profitPerFlightHour.*flightHoursPerYear;                              %Annual profit [$/yr]      
 impliedValue=(flyPrice+pLast-drivePrice)./(tDrive-tFly)*60;                         %Implied value [$ paid by passener per min saved]
@@ -243,9 +251,22 @@ if false
     disp(['Summary: $' num2str(flighlyCost,'%0.0f') '*F + $' num2str(hourlyCost+annualCost./flightHoursPerYear,'%0.0f') '*H'])
     disp(['Simplified ticket model: $' num2str((flighlyCost+hourlyCost*3/60)/2*1.3,'%0.0f') '*F + $' num2str((hourlyCost+annualCost./flightHoursPerYear)/(vCruise*3.6)/2*1.3,'%2.2f') '*km'])
     disp(['15 minute ticket: $' num2str((flighlyCost+(hourlyCost+annualCost./flightHoursPerYear)*0.25)*1.3/2,'%2.2f')])
-    disp(['Value ticket: $' num2str(flyPrice,'%2.2f') ' (' num2str(tTrip/60,'%1.1f') ' min)'])
-    disp(['Profit: ' num2str(profitPerFlightHour,'%0.0f')])
+    disp('')
+    disp(['Taxi ticket: $' num2str(drivePrice,'%2.2f') ' (' num2str(tDrive/60,'%1.1f') ' min)'])
+    disp(['Value ticket: $' num2str(flyPrice+pLast,'%2.2f') ' (' num2str(tFly/60,'%1.1f') ' min)'])
+    disp(['Profit: $' num2str(profitPerFlightHour,'%0.0f') '/FH'])
 end
+
+% Profitability metric
+theta=4.8510; k=3.9761;                                                     %PDF shape factors
+tripPDF=(p.dMission/1000).^(k-1).*...                                       %PDF of trip lengths
+        exp(-p.dMission/1000/theta)/gamma(k)/(theta^k); 
+tripPDF=repmat(tripPDF,size(profitPerYear,1),1);                            %PDF reshaped
+mask = profitPerYear>0;                                                     %Mask of profitable trips
+profitMetric = profitPerYear.*tripPDF;                                      %Weights applied to annual profit
+profitMetric(isnan(profitMetric))=0;                                        %NANs removed
+profitMetric = sum(profitMetric.*mask,2)./sum(tripPDF.*mask,2);             %Weighted average of annual profit
+profitMetric(isnan(profitMetric))=0;                                        %NANs removed
 
 %Data out
 for i=1:length(p.out)

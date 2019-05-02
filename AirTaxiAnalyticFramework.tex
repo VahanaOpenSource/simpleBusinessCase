@@ -64,9 +64,9 @@ The drag coefficient during cruise is given by the sum of a parasitic drag from 
 \end{align}
 Finally, the power required during cruise is given by,
 \begin{align}
-	P_{cruise} = \frac{m_{gross} g \left(V_C + V_{wind}\right) C_D}{C_L \eta_{cruise}}
+	P_{cruise} = \frac{m_{gross} g V_C C_D}{C_L \eta_{cruise}}
 \end{align}
-where $V_{wind}$ is the headwind accounted for during a typical flight and $\eta_{cruise}$ is the powertrain efficiency during cruise. This efficiency covers losses in the motor, controller, wires, and any other losses.
+where $\eta_{cruise}$ is the powertrain efficiency during cruise. This efficiency covers losses in the motor, controller, wires, and any other losses.
 \section{Mission}
 The mission performance is considered from a total available energy perspective. The energy available for a given mission is determined by the available energy in a battery pack and by the energy reserved for non-mission segments, such as alternate legs, reserve energy, and unusable energy. The useful energy available in a battery pack is given by,
 \begin{align}
@@ -74,14 +74,14 @@ The mission performance is considered from a total available energy perspective.
 \end{align}
 where $\hat{E_{cell}}$ is the cell specific energy defined as the rated energy per mass of a battery cell, $f_{int}$ is the integration factor which is the ratio of total cell mass to total battery pack mass, and $f_{eol}$ is the battery end of life factor that accounts for pack degradation over the useful life of the pack. An alternate mission is sized to account for instances such as the primary landing site not being available. Under current standards, the alternate is sized to a particular time spent loitering typically in excess of twenty minutes. However, with typical primary mission lengths on the same order, these alternates will likely be redefined to account for the inherently constrainted mission profiles. To incorporate flexibility, energy used during alternates ($E_{alt}$) based on either loiter time ($t_{alt}$) or distance ($d_{alt}$) are addressed by considering the maximum energy of both cases.
 \begin{align}
-	E_{alt}=\min \left({P_C t_{alt}, \frac{P_C d_{alt}}{V_C}}\right)
+	E_{alt}=\max \left({P_C t_{alt}, \frac{P_C d_{alt}}{V_C-V_{wind}}}\right)
 \end{align}
-Reserve energy $E_{res}$ is defined as a fraction of total energy $f_{res}$. If the primary mission length is not defined, then the maximum mission length is determined as follows,
+where $V_{wind}$ is the design headwind. Reserve energy $E_{res}$ is defined as a fraction of total energy $f_{res}$. If the primary mission length is not defined, then the maximum mission length is determined as follows,
 \begin{align}
 	E_{hover}	 &= P_{hover} t_{hover} \\
 	E_{cruise} &= E_{total} - E_{hover} - E_{alt} - E_{res} \\ 
 	t_{cruise} &= \frac{E_{cruise}}{P_{cruise}} \\ \label{t_cruise} \\
-	d_{cruise} &= t_{cruise} V_C \label{d_cruise}
+	d_{cruise} &= t_{cruise} \left( V_C - V_{wind} \right) \label{d_cruise}
 \end{align}
 The total time spent in flight is given by,
 \begin{align}
@@ -100,10 +100,10 @@ Operating cost estimation contains many parameters that required detailed explor
 \begin{align}
 	E_{flight}&=E_{hover}+E_{cruise} \\
 	D_{discharge}&=\frac{E_{flight}}{E_{total}} \\
-	C_{pack}&=E_{total} c_{pack}\\
+	C_{pack}&=E_{total} \left(c_{pack}+c_{cell}\right) + c_{base}\\
 	R_{discharge}&=\frac{3600 E_{flight}}{t_{flight} E_{total}}
 \end{align}
-where $D_{discharge}$ is the depth of discharge, $C_{battery}$ is the cost of the battery pack, $c_{pack}$ is the cost per $kWh$, and $R_{discharge}$ is the average rate of discharge during the mission. One important value in determination of battery costs is the battery cycle life, $N_{battery}$, which is generally very difficult to estimate since it depends on a wide variety of factors such as pack temperature, cell balancing, charge rates, discharge rates, and many more. Nevertheless, a simplified model is proposed here that captures the trends observed for the cells under consideration.
+where $D_{discharge}$ is the depth of discharge, $C_{battery}$ is the cost of the battery pack, $c_{pack}$ is the pack component cost per $kWh$, $c_{cell}$ is the cell cost per $kWh$, $c_{base}$ is the pack component base cost, and $R_{discharge}$ is the average rate of discharge during the mission. One important value in determination of battery costs is the battery cycle life, $N_{battery}$, which is generally very difficult to estimate since it depends on a wide variety of factors such as pack temperature, cell balancing, charge rates, discharge rates, and many more. Nevertheless, a simplified model is proposed here that captures the trends observed for the cells under consideration.
 \begin{align}
 	N_{battery}=f_R R_{discharge}^{-k_R} D_{discharge}^{-k_D}
 \end{align}
@@ -180,11 +180,12 @@ One method to determine the value that a new transportation service adds is to p
 	t_{last}&=\frac{d_{last}}{V_{drive}\left(d_{last}\right)}+t_{unload}\\
 	t_{air}&=t_{transfer}+t_{flight}+t_{alight}+t_{last}
 \end{align}
-The proposed ground speed model during peak traffic is given by,
+The proposed ground speed model during peak traffic is detailed in Appendix \ref{APX:groundSpeed}. During peak traffic, the drive speed model takes the following form.
 \begin{align}
-	V_{drive}(d)=\left(16.6\frac{m}{s}\right)\frac{d}{15000m+d}
+	V_{drive}(d)=\left(11.3\frac{m}{s}\right)\frac{d}{8530m+d}\frac{1}{f_{traffic}}
 \end{align}
-Several different ticket pricing schemes may also be considered. For a ground taxi, a standard fare model is used. For the air taxi, pricing schemes based on value, distance, and time are considered.
+where $f_{traffic}$ may be used to effectively increase traffic by reducing the average driving speed by that factor.
+1Several different ticket pricing schemes may also be considered. For a ground taxi, a standard fare model is used. For the air taxi, pricing schemes based on value, distance, and time are considered.
 \begin{align}
 	P_{ground}&=c_{ground}+d_{cruise} c'_{ground}+t_{drive} \dot{c}_{ground}\\
 	P_{last}&=c_{ground}+d_{last} c'_{ground}+t_{last} \dot{c}_{ground}\\
@@ -204,13 +205,24 @@ The profit is therefore,
 	\dot{P} &= \dot{R} - \dot{C}  \\
 	P &= \dot{P} H_{year}
 \end{align}
+This profit value provides the profit for a trip of a fixed length being performed throughout the year. Practically, there will be a variety of trip lengths each of which may be performed with the same aircraft. To account for a variety of trip lengths, a probability density function (PDF) of those trip lengths may be provided. Several data sources have been used to estimate the PDF including commuter trip data, a global survey of airport-to-downtown distances, taxi trip data, and distribution in cities with existing helipad infrastructure. It was found that in all cases the PDFs were similar. The airport-to-downtown cumulative distribution function (CDF) and PDF are shown below for reference with a gamma distribution fit to the data ($k=3.98$, $\theta=4.85$).
+\\\includegraphics[width=250px]{airportCDF.png}\\
+For each trip length, the profitability is evaluated. The weighted sum off all profitable trips represents the effective profitability for that vehicle throughout the year.
+\begin{align}
+	\bar{P} &= \frac{\sum_i H(P_i) P_i p_i}{\sum_i H(P_i) p_i}
+\end{align}
+where $H(x)$ is the Heaviside step function, $p_i$ is the probability density function and the function $f$ is equal to zero for negative input values and one for positive input values.  
+
 \section{Baseline}
-A baseline analysis was performed to determine for which combinations of range and speed would yield profitable operations. The baseline parameters are listed in Appendix \ref{baseline}
+A baseline analysis was performed to determine for which combinations of range and speed would yield profitable operations. The baseline parameters are listed in Appendix \ref{APX:baseline}
 
 
 \appendix
-\section{Baseline Input Variables} \label{baseline}
+\section{Ground Speed Model} \label{APX:groundSpeed}
+\includegraphics[width=360px]{groundSpeedModel.png}
 
+
+\section{Baseline Input Variables} \label{APX:baseline}
 The baseline parameters selected were as follows,\\\\
 \textbf{Physics Variables}
 \begin{itemize}

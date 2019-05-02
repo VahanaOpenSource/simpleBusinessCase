@@ -2,45 +2,42 @@ clear;clc
 
 %Input data range
 nRange=500;
-massGrossRange=linspace(500,5000,nRange);  %Gross takeoff mass evaluation range [kg]
-vCruiseRange=linspace(10,110,nRange);       %Cruise speed evaluation range [m/s]
-
-nDist=100;
-dMission = linspace(1,100,nDist);
+massGrossRange=linspace(500,3125,nRange);  %Gross takeoff mass evaluation range [kg]
+vCruiseRange=linspace(10,100,nRange);       %Cruise speed evaluation range [m/s]
 
 [M,V]=meshgrid(massGrossRange,vCruiseRange); M=M'; V=V';
 pilot=0;
 nPax=[2:5]-pilot;
-nPax=3-pilot;
 trafficFactor = 1.5;
 unit=ones(numel(M),1);
 %Technology State
-technology='a';
+technology='c';
 
 switch lower(technology)
     case 'a' %Basic cells, EIS
-        specificBatteryCost=350/3600/1000;
+        specificCellCost=350/3600/1000;
         cellSpecificEnergy=240*3600;
         cycleLifeFactor=315;
         specificHullCost=1360;
     case 'b' %Advanced cells, EIS
-        specificBatteryCost=2000/3600/1000;
+        specificCellCost=2500/3600/1000;
         cellSpecificEnergy=325*3600;
         cycleLifeFactor=315;
         specificHullCost=1360;
     case 'c' %Advanced cells, at scale
-        specificBatteryCost=250/3600/1000;
+        specificCellCost=250/3600/1000;
         cellSpecificEnergy=325*3600;
         cycleLifeFactor=750;
         specificHullCost=840;
 end
-inputs={'specificBatteryCost',specificBatteryCost, ...
-        'cellSpecificEnergy',cellSpecificEnergy, ...
-        'pilot',pilot, ...
-        'specificHullCost',specificHullCost, ...
-        'cycleLifeFactor',cycleLifeFactor, ...
-        'pilot',pilot, ...
-        'trafficFactor', trafficFactor};
+inputs={'specificCellCost',specificCellCost, ...
+    'cellSpecificEnergy',cellSpecificEnergy, ...
+    'pilot',pilot, ...
+    'specificHullCost',specificHullCost, ...
+    'cycleLifeFactor',cycleLifeFactor, ...
+    'pilot',pilot, ...
+    'trafficFactor', trafficFactor};
+
 
 for i=1:length(nPax)
     [P,R,T,L,C]=simpleBusinessCase(M(:),V(:),nPax(i),inputs{:},'out',{'profitPerYear';'range';'costPerFlightHour';'lod';'cycleLife'});
@@ -58,7 +55,7 @@ for i=1:length(nPax)
         if i==1; clf; end
         subplot(1,length(nPax),i); hold on;
         %contour(V*3.6,R,M,'linewidth',2,'ShowText','on','linecolor',[1 1 1]*0.9)
-        contour(V*3.6,R,P,[-2:.5:1],'linewidth',2,'ShowText','on')
+        contour(V*3.6,R,P,'linewidth',2,'ShowText','on')
         xlabel('Cruise speed [km/h]')
         ylabel('Range [km]')
         ylim([0 80])
