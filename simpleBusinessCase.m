@@ -38,7 +38,6 @@ addParameter(ip, 'solidityMax',         0.25,                 @isnumeric);  %Max
 
 addParameter(ip, 'cruiseEfficiency',    0.90*0.96*0.98*0.81*0.9,  @isnumeric);  %Cruise propeller efficiency (motor+controller+line+prop+discharge)
 addParameter(ip, 'cruiseCl',            0.55,                 @isnumeric);  %Cruise lift coefficient
-addParameter(ip, 'ARmin',               3,                    @isnumeric);  %Maximum aspect ratio (for stiffness & weight)
 addParameter(ip, 'ARmax',               12,                   @isnumeric);  %Maximum aspect ratio (for stiffness & weight)
 addParameter(ip, 'Cd0',                 0.020,                @isnumeric);  %Aircraft drag coeff (besides fuselage and landing gear)
 
@@ -77,12 +76,12 @@ addParameter(ip, 'packOverhead',            0.13,           @isnumeric);    %Pac
 addParameter(ip, 'nPacks',                  4,              @isnumeric);    %Number of battery packs
 addParameter(ip, 'costElectricity',         0.20/1000/3600, @isnumeric);    %Cost of electricty [$/Ws]
 addParameter(ip, 'specificHullCost',        840,            @isnumeric);    %Specific cost of the vehicle [$/kg]
-addParameter(ip, 'depreciationRate',        0.1,            @isnumeric);    %Annual depreciation rate [% of hull cost]
+addParameter(ip, 'depreciationRate',        0.1,            @isnumeric);    %Annual depreciation rate [1/yr]
 addParameter(ip, 'costLiabilityPerYear',    22000,          @isnumeric);    %Annual liability cost [$/year]
 addParameter(ip, 'hullRatePerYear',         0.045,          @isnumeric);    %Annual hull insurance rate [% of hull cost]
 addParameter(ip, 'annualServicesFees',      7700,           @isnumeric);    %Annual fees for maintenance, navigation, datalink [$/year]
 addParameter(ip, 'maintananceCostPerFH',    75,             @isnumeric);    %Maintenance cost per FH [$/FH]
-addParameter(ip, 'landingFee',              50,             @isnumeric);    %Cost per landing
+addParameter(ip, 'landingFee',              50,            @isnumeric);     %Cost per landing [$]
 addParameter(ip, 'pilotCostRate',           280500,         @isnumeric);    %Annual pilot cost (including benefits)
 addParameter(ip, 'trainingCostRate',        9900,           @isnumeric);    %Annual training cost
 
@@ -135,7 +134,7 @@ powerHover(tipSpeed>p.vSound.*p.tipMach*(1+eps))=nan;                           
 sRef=p.massGross.*p.g./(0.5*p.rho.*p.cruiseCl.*p.vCruise.^2);               %Reference wing area [m^2]
 sRef(sRef>0.25*pi*p.dValue.^2)=nan;
 AR=p.dValue.^2./sRef;                                                       %Aspect ratio
-AR=sum(cat(p.ARmin,AR,p.ARmax.*unit).^-12,3).^(-1/12);                      %Apply aspect ratio upper limit
+AR=sum(cat(3,AR,p.ARmax.*unit).^-12,3).^(-1/12);                            %Apply aspect ratio upper limit
 sRef=p.dValue.^2./AR;                                                       %Recompute reference wing area [m^2]
 Cl=p.massGross.*p.g./(0.5*p.rho.*sRef.*p.vCruise.^2);                       %Recompute cruise lift coefficient
 oswald=1./(1.05+0.007*pi*AR);                                               %Oswald efficiency factor
@@ -188,12 +187,14 @@ packCostPerTrip=costBattery./cycleLife;                                         
 energyCostPerTrip=p.costElectricity.*energyMission;                                         %Cost of electricity per mission [$/mission]
 
 %Fixed Costs
-aircraftCost=p.specificHullCost.*massEmpty;                                                                 %Acquisition cost of aircraft [$]
-costInsurancePerYear=p.costLiabilityPerYear+p.hullRatePerYear.*aircraftCost;                                %Annual insurance cost [$/yr]
-costDepreciationPerYear=p.depreciationRate.*aircraftCost;                                                   %Annual depreciation cost [$/yr]
-pilotCost=p.pilot.*p.pilotCostRate;                                                                     %Annual pilot cost (including benefits)
-trainingCost=p.pilot.*p.trainingCostRate;                                                               %Annual training cost
-annualCost=costInsurancePerYear+costDepreciationPerYear+p.annualServicesFees+pilotCost+trainingCost;    %Annual fixed costs [$/yr]
+aircraftCost=p.specificHullCost.*massEmpty;                                 %Acquisition cost of aircraft [$]
+costInsurancePerYear=p.costLiabilityPerYear+...
+                     p.hullRatePerYear.*aircraftCost;                       %Annual insurance cost [$/yr]
+costDepreciationPerYear=p.depreciationRate.*aircraftCost;                   %Annual depreciation cost [$/yr]
+pilotCost=p.pilot.*p.pilotCostRate;                                         %Annual pilot cost (including benefits)
+trainingCost=p.pilot.*p.trainingCostRate;                                   %Annual training cost
+annualCost=costInsurancePerYear+costDepreciationPerYear+...
+           p.annualServicesFees+pilotCost+trainingCost;                     %Annual fixed costs [$/yr]
 
 %Variable Costs
 energyCostPerFH=energyCostPerTrip./tTrip*3600;                              %Energy cost per flight hour  [$/FH]
@@ -202,16 +203,18 @@ variableCost=energyCostPerFH+packCostPerFH+p.maintananceCostPerFH;          %Tot
 
 %Costs Summary
 directOperatingCost=variableCost+annualCost./flightHoursPerYear;            %Direct operating cost per flight hour [$/FH]
-costPerFlightHour=directOperatingCost+p.landingFee.*tripsPerYear./flightHoursPerYear; %Total operating cost per flight hour  [$/FH]
+costPerFlightHour=directOperatingCost+...
+                p.landingFee.*tripsPerYear./flightHoursPerYear;             %Total operating cost per flight hour  [$/FH]
 
 %% Passenger experience
-vDrive=11.3*range./(8530+range)./p.trafficFactor;                          %Taxi speed during peak traffic [m/s]
+vDrive=11.3*range./(8530+range)./p.trafficFactor;                           %Taxi speed during peak traffic [m/s]
 tDrive=p.curbTime+range./vDrive+p.unloadTime;                               %Taxi trip time [s]
 drivePrice=p.taxiDistanceRate.*range+p.taxiTimeRate.*tDrive+p.taxiBaseFare; %Taxi ticket price [$]
 vLast=16.6*p.lastLegDistance./(15000+p.lastLegDistance)./p.trafficFactor;   %Average speed for the last leg [m/s]
 tLast=p.lastLegDistance./vLast;                                             %Time for the last leg [s]
 tFly=p.transferTime+tTrip+p.alightTime+tLast+p.unloadTime;                  %UAM trip time [s]
-pLast=p.lastLegDistance.*p.taxiDistanceRate+tLast.*p.taxiTimeRate+p.taxiBaseFare;
+pLast=p.lastLegDistance.*p.taxiDistanceRate+...
+      tLast.*p.taxiTimeRate+p.taxiBaseFare;                                 %Taxi ticket price for last leg [$]
 
 %Model to select UAM trip price
 switch p.ticketModel
@@ -229,13 +232,14 @@ switch p.ticketModel
 end
 
 %% Business Case
-passengerLoadingRate=1+0.1*(1-p.nPax);                                              %Average rate that vehicle is full when flying passengers
-revenuePerTrip=flyPrice.*p.nPax.*passengerLoadingRate;                              %Revenue per trip [$/mission]
-revenuePerFlightHour=revenuePerTrip./(tTrip/3600).*(1-p.deadheadRate);                                  %Revenue per flight hour [$/FH]
-profitPerFlightHour=revenuePerFlightHour-costPerFlightHour.*p.operatingCostFactor;  %Profit per flight hour [$/FH]
-profitPerYear=profitPerFlightHour.*flightHoursPerYear;                              %Annual profit [$/yr]      
-impliedValue=(flyPrice+pLast-drivePrice)./(tDrive-tFly)*60;                         %Implied value [$ paid by passener per min saved]
-impliedValue(flyPrice>drivePrice & tDrive<tFly)=nan;                                %If aircraft is slower and more expensive then no value
+passengerLoadingRate=1+0.1*(1-p.nPax);                                      %Average rate that vehicle is full when flying passengers
+revenuePerTrip=flyPrice.*p.nPax.*passengerLoadingRate;                      %Revenue per trip [$/mission]
+revenuePerFlightHour=revenuePerTrip./(tTrip/3600).*(1-p.deadheadRate);      %Revenue per flight hour [$/FH]
+profitPerFlightHour=revenuePerFlightHour-...
+                    costPerFlightHour.*p.operatingCostFactor;               %Profit per flight hour [$/FH]
+profitPerYear=profitPerFlightHour.*flightHoursPerYear;                      %Annual profit [$/yr]      
+impliedValue=(flyPrice+pLast-drivePrice)./(tDrive-tFly)*60;                 %Implied value [$ paid by passener per min saved]
+impliedValue(flyPrice>drivePrice & tDrive<tFly)=nan;                        %If aircraft is slower and more expensive then no value
 
 %% Profitability metric
 theta=4.8510; k=3.9761;                                                     %PDF shape factors

@@ -21,12 +21,12 @@ switch lower(technology)
         specificHullCost=1360;
     case 'b' %Advanced cells, EIS
         specificCellCost=2500/3600/1000;
-        cellSpecificEnergy=325*3600;
+        cellSpecificEnergy=300*3600;
         cycleLifeFactor=315;
         specificHullCost=1360;
     case 'c' %Advanced cells, at scale
-        specificCellCost=250/3600/1000;
-        cellSpecificEnergy=325*3600;
+        specificCellCost=500/3600/1000;
+        cellSpecificEnergy=300*3600;
         cycleLifeFactor=750;
         specificHullCost=840;
 end
@@ -38,9 +38,8 @@ inputs={'specificCellCost',specificCellCost, ...
     'pilot',pilot, ...
     'trafficFactor', trafficFactor};
 
-
 for i=1:length(nPax)
-    [P,R,T,L,C]=simpleBusinessCase(M(:),V(:),nPax(i),inputs{:},'out',{'profitPerYear';'range';'costPerFlightHour';'lod';'cycleLife'});
+    [P,R,T,L,C]=simpleBusinessCase(M(:),V(:),nPax(i),inputs{:},'out',{'profitPerYear';'range';'tripsPerYear';'lod';'cycleLife'});
     
     P=reshape(P,nRange,nRange)/1e6;
     R=reshape(R,nRange,nRange)/1e3;
@@ -49,12 +48,13 @@ for i=1:length(nPax)
     C=reshape(C,nRange,nRange);
     
     %Plot results
+    fign = 1;
     if numel(R)>4
         %Plot contours of ticket price, GTOW, and profitability
-        figure(1);
+        figure(fign);
         if i==1; clf; end
         subplot(1,length(nPax),i); hold on;
-        %contour(V*3.6,R,M,'linewidth',2,'ShowText','on','linecolor',[1 1 1]*0.9)
+        %contour(V*3.6,R,T,'linewidth',2,'ShowText','on','linecolor',[1 1 1]*0.9)
         contour(V*3.6,R,P,'linewidth',2,'ShowText','on')
         xlabel('Cruise speed [km/h]')
         ylabel('Range [km]')
@@ -76,7 +76,7 @@ end
 %Harmonize plot colors
 if numel(R)>4
     for i=1:length(nPax)
-        figure(1);
+        figure(fign);
         subplot(1,length(nPax),i);
         caxis(clim)
         colormap(parula)

@@ -10,7 +10,7 @@ clc
 rng default % Reset random number generator to make repeatable
 
 %% Monte Carlo Values
-n = 100;
+n = 200;
 
 %% Design values
 dValue = 14;
@@ -308,7 +308,7 @@ for j = 1:nOutputs
 end
 
 %% Plot histograms
-figuren('Results'); clf;
+%figuren('Results'); clf;
 
 subplot(4,2,1); hold on;
 hist(profitPerYear/1e6,100)
