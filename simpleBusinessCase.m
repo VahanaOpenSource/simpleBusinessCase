@@ -75,13 +75,22 @@ addParameter(ip, 'specificCoolingCost',     5/3600/1000,    @isnumeric);    %Pac
 addParameter(ip, 'packOverhead',            0.13,           @isnumeric);    %Pack overhead (% of total pack cost)
 addParameter(ip, 'nPacks',                  4,              @isnumeric);    %Number of battery packs
 addParameter(ip, 'costElectricity',         0.20/1000/3600, @isnumeric);    %Cost of electricty [$/Ws]
+addParameter(ip, 'chargeEfficiency',        0.90,           @isnumeric);    %Charging efficiency
 addParameter(ip, 'specificHullCost',        840,            @isnumeric);    %Specific cost of the vehicle [$/kg]
 addParameter(ip, 'depreciationRate',        0.1,            @isnumeric);    %Annual depreciation rate [1/yr]
 addParameter(ip, 'costLiabilityPerYear',    22000,          @isnumeric);    %Annual liability cost [$/year]
 addParameter(ip, 'hullRatePerYear',         0.045,          @isnumeric);    %Annual hull insurance rate [% of hull cost]
 addParameter(ip, 'annualServicesFees',      7700,           @isnumeric);    %Annual fees for maintenance, navigation, datalink [$/year]
 addParameter(ip, 'maintananceCostPerFH',    75,             @isnumeric);    %Maintenance cost per FH [$/FH]
-addParameter(ip, 'landingFee',              50,            @isnumeric);     %Cost per landing [$]
+
+
+
+
+addParameter(ip, 'costPerPad',              5e6,            @isnumeric);    %Cost per landing pad (with support equipment) [$]
+addParameter(ip, 'padAmortizationYears',    25,             @isnumeric);    %Time to amortize pad investment [yr]
+addParameter(ip, 'laborPerPad',             5,              @isnumeric);    %Effective number of worker per pad
+addParameter(ip, 'laborRate',               25,             @isnumeric);    %Pad worker's labor rate [$/hr]
+
 addParameter(ip, 'pilotCostRate',           280500,         @isnumeric);    %Annual pilot cost (including benefits)
 addParameter(ip, 'trainingCostRate',        9900,           @isnumeric);    %Annual training cost
 
@@ -197,14 +206,21 @@ annualCost=costInsurancePerYear+costDepreciationPerYear+...
            p.annualServicesFees+pilotCost+trainingCost;                     %Annual fixed costs [$/yr]
 
 %Variable Costs
-energyCostPerFH=energyCostPerTrip./tTrip*3600;                              %Energy cost per flight hour  [$/FH]
+energyCostPerFH=energyCostPerTrip./tTrip*3600/p.chargeEfficiency;           %Energy cost per flight hour  [$/FH]
 packCostPerFH=packCostPerTrip./tTrip*3600;                                  %Pack cost per flight hour  [$/FH]
 variableCost=energyCostPerFH+packCostPerFH+p.maintananceCostPerFH;          %Total variable cost per flight hour  [$/FH]
+
+%Landing
+annualPadCost = p.costPerPad/p.padAmortizationYears;
+annualPadLabor = p.laborPerPad*p.laborRate*p.operatingTimePerDay/3600*365;
+annualPadLandings = p.operatingTimePerDay./p.padTurnAroundTime*365;
+landingFee = p.operatingCostFactor*(annualPadCost + annualPadLabor) ...
+             /annualPadLandings;
 
 %Costs Summary
 directOperatingCost=variableCost+annualCost./flightHoursPerYear;            %Direct operating cost per flight hour [$/FH]
 costPerFlightHour=directOperatingCost+...
-                p.landingFee.*tripsPerYear./flightHoursPerYear;             %Total operating cost per flight hour  [$/FH]
+                  landingFee.*tripsPerYear./flightHoursPerYear;             %Total operating cost per flight hour  [$/FH]
 
 %% Passenger experience
 vDrive=11.3*range./(8530+range)./p.trafficFactor;                           %Taxi speed during peak traffic [m/s]
